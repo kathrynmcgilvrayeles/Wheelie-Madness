@@ -1,0 +1,3199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Construction Site Wheelie Madness</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+            background-color: #111827;
+        }
+        .game-font {
+            font-family: 'Black Ops One', cursive;
+        }
+        .hazard-stripes {
+            background: repeating-linear-gradient(
+                45deg,
+                #f59e0b,
+                #f59e0b 15px,
+                #1f2937 15px,
+                #1f2937 30px
+            );
+        }
+        .color-swatch {
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .color-swatch.selected {
+            transform: scale(1.2);
+            box-shadow: 0 0 0 3px #fff, 0 0 12px #f59e0b;
+        }
+        .touch-btn {
+            background: rgba(17, 24, 39, 0.75);
+            border: 2px solid rgba(245, 158, 11, 0.8);
+            backdrop-filter: blur(4px);
+            touch-action: manipulation;
+        }
+        .touch-btn:active {
+            background: rgba(245, 158, 11, 0.9);
+            color: #000;
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex flex-col items-center justify-center relative">
+
+    <!-- WELCOME / SETUP MODAL -->
+    <div id="setupScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/90 p-3 overflow-y-auto">
+        <div class="bg-gray-800 border-4 border-amber-500 rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl my-auto">
+            <!-- Top Hazard Banner -->
+            <div class="hazard-stripes h-5 w-full"></div>
+            
+            <div class="p-5 md:p-7 space-y-5">
+                <div class="text-center">
+                    <h1 class="game-font text-3xl md:text-5xl text-amber-400 tracking-wider drop-shadow-[0_3px_3px_rgba(0,0,0,0.9)]">
+                        🏗️ WHEELIE MADNESS
+                    </h1>
+                    <p class="text-gray-300 text-xs md:text-sm mt-1 font-semibold uppercase tracking-widest">
+                        Construction Zone Stunt Championship
+                    </p>
+                </div>
+
+                <!-- Mode & Difficulty Row -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-900/90 p-4 rounded-xl border border-gray-700">
+                    <!-- Player Mode -->
+                    <div>
+                        <label class="block text-amber-400 font-bold text-xs uppercase mb-2 tracking-wider">1. Select Players</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="mode1P" onclick="setPlayerCount(1)" class="py-2.5 px-4 rounded-lg font-extrabold text-sm border-2 border-amber-500 bg-amber-500 text-gray-900 transition">
+                                1 PLAYER
+                            </button>
+                            <button id="mode2P" onclick="setPlayerCount(2)" class="py-2.5 px-4 rounded-lg font-extrabold text-sm border-2 border-gray-600 bg-gray-800 text-gray-300 hover:border-amber-400 transition">
+                                2 PLAYERS (Split)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Difficulty Level -->
+                    <div>
+                        <label class="block text-amber-400 font-bold text-xs uppercase mb-2 tracking-wider">2. Construction Site Difficulty</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button id="diff0" onclick="setDifficulty(0)" class="py-2.5 px-2 rounded-lg font-extrabold text-xs border-2 border-green-500 bg-green-500 text-gray-950 transition">
+                                APPRENTICE
+                            </button>
+                            <button id="diff1" onclick="setDifficulty(1)" class="py-2.5 px-2 rounded-lg font-extrabold text-xs border-2 border-gray-600 bg-gray-800 text-gray-300 hover:border-amber-400 transition">
+                                FOREMAN
+                            </button>
+                            <button id="diff2" onclick="setDifficulty(2)" class="py-2.5 px-2 rounded-lg font-extrabold text-xs border-2 border-gray-600 bg-gray-800 text-gray-300 hover:border-red-500 transition">
+                                DAREDEVIL
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Player Customization Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Player 1 -->
+                    <div class="bg-gray-900 p-4 rounded-xl border-2 border-amber-500/60">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="game-font text-lg text-amber-400">PLAYER 1</span>
+                            <span class="text-xs bg-gray-800 text-amber-300 px-2.5 py-1 rounded font-mono border border-gray-700">WASD + SPACE (Flip)</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="block text-gray-400 text-xs font-semibold mb-1">RIDER NAME</label>
+                            <input id="p1Name" type="text" maxlength="12" value="Blaze" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-1.5 text-white font-bold focus:outline-none focus:border-amber-400">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 text-xs font-semibold mb-2">BIKE COLOUR (6 Choices)</label>
+                            <div id="p1Colors" class="flex items-center justify-between px-1"></div>
+                        </div>
+                    </div>
+
+                    <!-- Player 2 -->
+                    <div id="p2Card" class="bg-gray-900 p-4 rounded-xl border-2 border-sky-500/60 opacity-40 pointer-events-none transition-opacity">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="game-font text-lg text-sky-400">PLAYER 2</span>
+                            <span class="text-xs bg-gray-800 text-sky-300 px-2.5 py-1 rounded font-mono border border-gray-700">ARROWS + 0 (Flip)</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="block text-gray-400 text-xs font-semibold mb-1">RIDER NAME</label>
+                            <input id="p2Name" type="text" maxlength="12" value="Nitro" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-1.5 text-white font-bold focus:outline-none focus:border-sky-400">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 text-xs font-semibold mb-2">BIKE COLOUR (6 Choices)</label>
+                            <div id="p2Colors" class="flex items-center justify-between px-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instructions & Powerups -->
+                <div class="bg-gray-900/95 p-4 rounded-xl border border-gray-700 text-xs md:text-sm text-gray-300 space-y-2">
+                    <div class="font-bold text-amber-400 uppercase tracking-wider">📋 Site Rules & Instructions:</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <ul class="list-disc list-inside space-y-1">
+                            <li><strong class="text-white">Accelerate:</strong> Hold <span class="text-amber-300 font-mono">D</span> (P1) or <span class="text-sky-300 font-mono">Right Arrow</span> (P2).</li>
+                            <li><strong class="text-white">Pop a Wheelie:</strong> Tap/Hold <span class="text-amber-300 font-mono">A</span> (P1) or <span class="text-sky-300 font-mono">Left Arrow</span> (P2) to lean back!</li>
+                            <li><strong class="text-white">Jump Obstacles:</strong> Press <span class="text-amber-300 font-mono">W</span> (P1) or <span class="text-sky-300 font-mono">Up Arrow</span> (P2) to leap over barricades.</li>
+                            <li><strong class="text-purple-400">360° Stunt Flip:</strong> Press <span class="text-amber-300 font-mono">SPACEBAR</span> (P1) or <span class="text-sky-300 font-mono">0</span> (P2) to show off (0 PTS)!</li>
+                        </ul>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li><strong class="text-green-400">Sweet Spot Zone:</strong> Keep your wheelie balanced in the green gauge for massive points! Don't flip over backwards!</li>
+                            <li><strong class="text-yellow-300">❓ Random Mystery Rewards:</strong> Hit Rainbow Boxes for Star Power, Turbo, 2X/3X Points, Star Magnet, Moon Gravity, or Jackpot Prizes!</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Start Button -->
+                <button onclick="startGame()" class="w-full py-4 rounded-xl game-font text-2xl md:text-3xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-gray-950 font-black tracking-wider shadow-[0_0_25px_rgba(245,158,11,0.6)] hover:brightness-110 active:scale-[0.99] transition">
+                    🚦 START ENGINE & RIDE!
+                </button>
+            </div>
+            <div class="hazard-stripes h-5 w-full"></div>
+        </div>
+    </div>
+
+    <!-- FINISH / RESULTS MODAL -->
+    <div id="resultsScreen" class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-950/90 p-4">
+        <div class="bg-gray-800 border-4 border-amber-500 rounded-2xl max-w-xl w-full overflow-hidden shadow-2xl text-center">
+            <div class="hazard-stripes h-5 w-full"></div>
+            <div class="p-6 space-y-5">
+                <h2 id="winnerBanner" class="game-font text-3xl md:text-4xl text-amber-400">🏁 TRACK COMPLETE!</h2>
+                <div id="resultsContent" class="space-y-3"></div>
+                <div class="flex gap-3 pt-2">
+                    <button onclick="restartRace()" class="flex-1 py-3 rounded-xl game-font text-xl bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold transition">
+                        🔄 PLAY AGAIN
+                    </button>
+                    <button onclick="showSetup()" class="flex-1 py-3 rounded-xl game-font text-xl bg-gray-700 hover:bg-gray-600 text-white font-bold transition">
+                        ⚙️ CHANGE SETUP
+                    </button>
+                </div>
+            </div>
+            <div class="hazard-stripes h-5 w-full"></div>
+        </div>
+    </div>
+
+    <!-- TOP BAR DURING GAMEPLAY -->
+    <div class="w-full bg-gray-900 border-b-2 border-amber-500 px-4 py-2 flex items-center justify-between z-20 shrink-0">
+        <div class="flex items-center gap-3">
+            <span class="game-font text-amber-400 text-lg md:text-xl tracking-wider">🏗️ WHEELIE MADNESS</span>
+            <span id="diffBadge" class="text-xs font-extrabold px-2.5 py-0.5 rounded bg-amber-500 text-gray-950 uppercase">Apprentice</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="toggleMute()" id="muteBtn" class="px-3 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-bold border border-gray-600">
+                🔊 SOUND ON
+            </button>
+            <button onclick="showSetup()" class="px-3 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-amber-400 text-xs font-bold border border-amber-500/50">
+                ⚙️ MENU
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN GAME CANVAS CONTAINER -->
+    <div class="relative flex-1 w-full overflow-hidden flex items-center justify-center bg-gray-950">
+        <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+
+        <!-- MOBILE / TOUCH CONTROLS OVERLAY -->
+        <div id="touchOverlay" class="pointer-events-none absolute inset-0 flex flex-col justify-between p-2 z-30">
+            <!-- Player 1 Touch Controls (Top half in 2P, or Bottom in 1P) -->
+            <div id="p1TouchRow" class="w-full flex justify-between items-end mt-auto pb-1">
+                <div class="flex gap-2 pointer-events-auto">
+                    <button id="t_p1_lean" class="touch-btn text-amber-400 font-black px-3 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        ↖️ WHEELIE
+                    </button>
+                    <button id="t_p1_down" class="touch-btn text-amber-300 font-black px-3 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        ↘️ DOWN
+                    </button>
+                </div>
+                <div class="flex gap-2 pointer-events-auto">
+                    <button id="t_p1_flip" class="touch-btn text-purple-400 font-black px-3 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        🔄 FLIP
+                    </button>
+                    <button id="t_p1_jump" class="touch-btn text-yellow-300 font-black px-3 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        ⏫ JUMP
+                    </button>
+                    <button id="t_p1_gas" class="touch-btn text-green-400 font-black px-4 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        ⛽ GAS
+                    </button>
+                </div>
+            </div>
+
+            <!-- Player 2 Touch Controls (Shown only in 2P mode at the bottom) -->
+            <div id="p2TouchRow" class="w-full hidden justify-between items-end pb-1">
+                <div class="flex gap-2 pointer-events-auto">
+                    <button id="t_p2_lean" class="touch-btn text-sky-400 font-black px-3 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        ↖️ P2 WHEELIE
+                    </button>
+                    <button id="t_p2_down" class="touch-btn text-sky-300 font-black px-3 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        ↘️ DOWN
+                    </button>
+                </div>
+                <div class="flex gap-2 pointer-events-auto">
+                    <button id="t_p2_flip" class="touch-btn text-purple-400 font-black px-3 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        🔄 FLIP
+                    </button>
+                    <button id="t_p2_jump" class="touch-btn text-yellow-300 font-black px-3 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        ⏫ JUMP
+                    </button>
+                    <button id="t_p2_gas" class="touch-btn text-green-400 font-black px-4 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        ⛽ P2 GAS
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**************************************************************
+         * 1. GAME CONFIGURATION & 6 BIKE COLOURS
+         **************************************************************/
+        const BIKE_COLORS = [
+            { name: 'Crimson Red', hex: '#ef4444', rim: '#fca5a5' },
+            { name: 'Electric Blue', hex: '#3b82f6', rim: '#93c5fd' },
+            { name: 'Toxic Green', hex: '#22c55e', rim: '#86efac' },
+            { name: 'Safety Orange', hex: '#f97316', rim: '#fdba74' },
+            { name: 'Neon Purple', hex: '#a855f7', rim: '#d8b4fe' },
+            { name: 'Cyber Gold', hex: '#eab308', rim: '#fef08a' }
+        ];
+
+        const DIFFICULTIES = [
+            {
+                name: 'Apprentice',
+                badgeClass: 'bg-green-500 text-gray-950',
+                trackLength: 9500,
+                sweetSpotMin: 18,
+                sweetSpotMax: 58,
+                flipAngle: 78,
+                gravityTorque: 85,
+                wheelieTorque: 145,
+                obstacleSpacing: 330,
+                skyTop: '#1e3a8a',
+                skyBot: '#f59e0b'
+            },
+            {
+                name: 'Foreman',
+                badgeClass: 'bg-amber-500 text-gray-950',
+                trackLength: 13500,
+                sweetSpotMin: 24,
+                sweetSpotMax: 54,
+                flipAngle: 74,
+                gravityTorque: 105,
+                wheelieTorque: 165,
+                obstacleSpacing: 265,
+                skyTop: '#0f172a',
+                skyBot: '#ea580c'
+            },
+            {
+                name: 'Daredevil',
+                badgeClass: 'bg-red-600 text-white',
+                trackLength: 18000,
+                sweetSpotMin: 28,
+                sweetSpotMax: 50,
+                flipAngle: 70,
+                gravityTorque: 125,
+                wheelieTorque: 185,
+                obstacleSpacing: 215,
+                skyTop: '#18181b',
+                skyBot: '#dc2626'
+            }
+        ];
+
+        let numPlayers = 1;
+        let currentDiffIndex = 0;
+        let p1ColorIndex = 0;
+        let p2ColorIndex = 1;
+        let gameActive = false;
+        let soundMuted = false;
+
+        /**************************************************************
+         * 2. SOUND SYNTHESIS (TONE.JS - NO EXTERNAL FILES)
+         **************************************************************/
+        let synth = null;
+        let noiseSynth = null;
+
+        function initAudio() {
+            if (synth) return;
+            try {
+                Tone.start();
+                synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.01, decay: 0.1, sustain: 0.05, release: 0.1 }
+                }).toDestination();
+                synth.volume.value = -8;
+
+                noiseSynth = new Tone.NoiseSynth({
+                    noise: { type: 'brown' },
+                    envelope: { attack: 0.01, decay: 0.15, sustain: 0 }
+                }).toDestination();
+                noiseSynth.volume.value = -10;
+            } catch (e) {
+                console.warn('Audio init skipped:', e);
+            }
+        }
+
+        function playSound(type) {
+            if (soundMuted || !synth) return;
+            try {
+                const now = Tone.now();
+                if (type === 'star') {
+                    synth.triggerAttackRelease(['C5', 'E5', 'G5'], '16n', now);
+                } else if (type === 'box') {
+                    synth.triggerAttackRelease(['G4', 'B4', 'D5', 'G5'], '8n', now);
+                } else if (type === 'jump') {
+                    synth.triggerAttackRelease(['D4', 'A4'], '16n', now);
+                } else if (type === 'flip') {
+                    synth.triggerAttackRelease(['E5', 'A5', 'C6'], '8n', now);
+                } else if (type === 'crash') {
+                    noiseSynth.triggerAttackRelease('8n', now);
+                    synth.triggerAttackRelease(['F2', 'F#2'], '8n', now);
+                } else if (type === 'win') {
+                    synth.triggerAttackRelease(['C4', 'E4', 'G4', 'C5'], '4n', now);
+                }
+            } catch (e) {}
+        }
+
+        function toggleMute() {
+            soundMuted = !soundMuted;
+            document.getElementById('muteBtn').textContent = soundMuted ? '🔇 MUTED' : '🔊 SOUND ON';
+        }
+
+        /**************************************************************
+         * 3. UI & COLOUR PICKER INITIALIZATION
+         **************************************************************/
+        function renderColorPickers() {
+            const p1Container = document.getElementById('p1Colors');
+            const p2Container = document.getElementById('p2Colors');
+            p1Container.innerHTML = '';
+            p2Container.innerHTML = '';
+
+            BIKE_COLORS.forEach((col, idx) => {
+                const btn1 = document.createElement('button');
+                btn1.className = `color-swatch w-8 h-8 rounded-full border-2 border-white/80 ${idx === p1ColorIndex ? 'selected' : ''}`;
+                btn1.style.backgroundColor = col.hex;
+                btn1.title = col.name;
+                btn1.onclick = () => { p1ColorIndex = idx; renderColorPickers(); };
+                p1Container.appendChild(btn1);
+
+                const btn2 = document.createElement('button');
+                btn2.className = `color-swatch w-8 h-8 rounded-full border-2 border-white/80 ${idx === p2ColorIndex ? 'selected' : ''}`;
+                btn2.style.backgroundColor = col.hex;
+                btn2.title = col.name;
+                btn2.onclick = () => { p2ColorIndex = idx; renderColorPickers(); };
+                p2Container.appendChild(btn2);
+            });
+        }
+
+        function setPlayerCount(count) {
+            numPlayers = count;
+            const btn1 = document.getElementById('mode1P');
+            const btn2 = document.getElementById('mode2P');
+            const p2Card = document.getElementById('p2Card');
+
+            if (count === 1) {
+                btn1.className = 'py-2.5 px-4 rounded-lg font-extrabold text-sm border-2 border-amber-500 bg-amber-500 text-gray-900 transition';
+                btn2.className = 'py-2.5 px-4 rounded-lg font-extrabold text-sm border-2 border-gray-600 bg-gray-800 text-gray-300 hover:border-amber-400 transition';
+                p2Card.classList.add('opacity-40', 'pointer-events-none');
+            } else {
+                btn2.className = 'py-2.5 px-4 rounded-lg font-extrabold text-sm border-2 border-sky-400 bg-sky-400 text-gray-950 transition';
+                btn1.className = 'py-2.5 px-4 rounded-lg font-extrabold text-sm border-2 border-gray-600 bg-gray-800 text-gray-300 hover:border-amber-400 transition';
+                p2Card.classList.remove('opacity-40', 'pointer-events-none');
+            }
+        }
+
+        function setDifficulty(idx) {
+            currentDiffIndex = idx;
+            const styles = [
+                'border-green-500 bg-green-500 text-gray-950',
+                'border-amber-500 bg-amber-500 text-gray-950',
+                'border-red-500 bg-red-500 text-white'
+            ];
+            for (let i = 0; i < 3; i++) {
+                const el = document.getElementById('diff' + i);
+                if (i === idx) {
+                    el.className = `py-2.5 px-2 rounded-lg font-extrabold text-xs border-2 transition ${styles[i]}`;
+                } else {
+                    el.className = 'py-2.5 px-2 rounded-lg font-extrabold text-xs border-2 border-gray-600 bg-gray-800 text-gray-300 transition';
+                }
+            }
+        }
+
+        function showSetup() {
+            gameActive = false;
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.remove('flex');
+            document.getElementById('setupScreen').classList.remove('hidden');
+        }
+
+        /**************************************************************
+         * 4. INPUT HANDLING (KEYBOARD WASD + ARROWS + TOUCH)
+         **************************************************************/
+        const keys = {
+            p1Gas: false, p1Lean: false, p1Down: false, p1Jump: false, p1Flip: false,
+            p2Gas: false, p2Lean: false, p2Down: false, p2Jump: false, p2Flip: false
+        };
+
+        window.addEventListener('keydown', (e) => {
+            if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+            const code = e.code;
+            // Player 1 (WASD + Spacebar for Flip)
+            if (code === 'KeyD') keys.p1Gas = true;
+            if (code === 'KeyA') keys.p1Lean = true;
+            if (code === 'KeyS') keys.p1Down = true;
+            if (code === 'KeyW') keys.p1Jump = true;
+            if (code === 'Space') { keys.p1Flip = true; e.preventDefault(); }
+
+            // Player 2 (Arrows + 0 for Flip)
+            if (code === 'ArrowRight') { keys.p2Gas = true; e.preventDefault(); }
+            if (code === 'ArrowLeft')  { keys.p2Lean = true; e.preventDefault(); }
+            if (code === 'ArrowDown')  { keys.p2Down = true; e.preventDefault(); }
+            if (code === 'ArrowUp')    { keys.p2Jump = true; e.preventDefault(); }
+            if (code === 'Digit0' || code === 'Numpad0') { keys.p2Flip = true; e.preventDefault(); }
+
+            // In 1-player mode, let Arrow keys & 0 also control Player 1 for convenience
+            if (numPlayers === 1) {
+                if (code === 'ArrowRight') keys.p1Gas = true;
+                if (code === 'ArrowLeft')  keys.p1Lean = true;
+                if (code === 'ArrowDown')  keys.p1Down = true;
+                if (code === 'ArrowUp')    keys.p1Jump = true;
+                if (code === 'Digit0' || code === 'Numpad0') keys.p1Flip = true;
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const code = e.code;
+            if (code === 'KeyD') keys.p1Gas = false;
+            if (code === 'KeyA') keys.p1Lean = false;
+            if (code === 'KeyS') keys.p1Down = false;
+            if (code === 'KeyW') keys.p1Jump = false;
+            if (code === 'Space') keys.p1Flip = false;
+
+            if (code === 'ArrowRight') keys.p2Gas = false;
+            if (code === 'ArrowLeft')  keys.p2Lean = false;
+            if (code === 'ArrowDown')  keys.p2Down = false;
+            if (code === 'ArrowUp')    keys.p2Jump = false;
+            if (code === 'Digit0' || code === 'Numpad0') keys.p2Flip = false;
+
+            if (numPlayers === 1) {
+                if (code === 'ArrowRight') keys.p1Gas = false;
+                if (code === 'ArrowLeft')  keys.p1Lean = false;
+                if (code === 'ArrowDown')  keys.p1Down = false;
+                if (code === 'ArrowUp')    keys.p1Jump = false;
+                if (code === 'Digit0' || code === 'Numpad0') keys.p1Flip = false;
+            }
+        });
+
+        function bindTouchButton(id, keyProp) {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+            const start = (e) => { e.preventDefault(); keys[keyProp] = true; };
+            const end = (e) => { e.preventDefault(); keys[keyProp] = false; };
+            btn.addEventListener('touchstart', start, { passive: false });
+            btn.addEventListener('touchend', end, { passive: false });
+            btn.addEventListener('touchcancel', end, { passive: false });
+            btn.addEventListener('mousedown', start);
+            btn.addEventListener('mouseup', end);
+            btn.addEventListener('mouseleave', end);
+        }
+
+        bindTouchButton('t_p1_lean', 'p1Lean');
+        bindTouchButton('t_p1_down', 'p1Down');
+        bindTouchButton('t_p1_jump', 'p1Jump');
+        bindTouchButton('t_p1_flip', 'p1Flip');
+        bindTouchButton('t_p1_gas',  'p1Gas');
+
+        bindTouchButton('t_p2_lean', 'p2Lean');
+        bindTouchButton('t_p2_down', 'p2Down');
+        bindTouchButton('t_p2_jump', 'p2Jump');
+        bindTouchButton('t_p2_flip', 'p2Flip');
+        bindTouchButton('t_p2_gas',  'p2Gas');
+
+        /**************************************************************
+         * 5. TRACK, OBSTACLES & MARIO-KART ITEM GENERATION
+         **************************************************************/
+        let trackObjects = [];
+        let trackCollectibles = [];
+        let bgCranes = [];
+
+        function generateConstructionTrack(diff) {
+            trackObjects = [];
+            trackCollectibles = [];
+            bgCranes = [];
+
+            // Generate background cranes & buildings with randomized dimensions
+            for (let x = 150; x < diff.trackLength + 800; x += 340 + Math.floor(Math.random() * 120)) {
+                bgCranes.push({
+                    x: x,
+                    height: 120 + Math.floor(Math.random() * 110),
+                    armLength: 90 + Math.floor(Math.random() * 80),
+                    buildingW: 100 + Math.floor(Math.random() * 90),
+                    buildingH: 75 + Math.floor(Math.random() * 100)
+                });
+            }
+
+            // Generate truly randomized Ramps, Cones, Barricades, Mud Pits, Stars & Mystery Boxes
+            let cursor = 420;
+            while (cursor < diff.trackLength - 450) {
+                const roll = Math.random();
+                const spacingJitter = (Math.random() * 0.45 + 0.8) * diff.obstacleSpacing;
+
+                if (roll < 0.30) {
+                    // Wooden / Steel Jump Ramp with random size
+                    const w = 105 + Math.floor(Math.random() * 45);
+                    const h = 42 + Math.floor(Math.random() * 24);
+                    trackObjects.push({ type: 'ramp', x: cursor, w: w, h: h });
+
+                    // Randomize reward pattern above the ramp
+                    const rewardPattern = Math.random();
+                    if (rewardPattern < 0.5) {
+                        const starCount = 3 + Math.floor(Math.random() * 3);
+                        for (let i = 0; i < starCount; i++) {
+                            trackCollectibles.push({
+                                type: 'star',
+                                x: cursor + 40 + i * 38,
+                                yOffset: 70 + Math.sin((i / (starCount - 1)) * Math.PI) * 45,
+                                collectedBy: {}
+                            });
+                        }
+                    } else {
+                        // High-air Mystery Box + Stars
+                        trackCollectibles.push({
+                            type: 'mystery',
+                            x: cursor + w + 45,
+                            yOffset: 105 + Math.floor(Math.random() * 25),
+                            collectedBy: {}
+                        });
+                        trackCollectibles.push({
+                            type: 'star',
+                            x: cursor + w + 95,
+                            yOffset: 90,
+                            collectedBy: {}
+                        });
+                    }
+                    cursor += w + spacingJitter;
+                } else if (roll < 0.55) {
+                    // Traffic Cones with randomized Mystery Box or Star clusters
+                    trackObjects.push({ type: 'cone', x: cursor, w: 36, h: 36 });
+                    if (Math.random() < 0.75) {
+                        trackCollectibles.push({
+                            type: 'mystery',
+                            x: cursor - 60 - Math.floor(Math.random() * 40),
+                            yOffset: 50 + Math.floor(Math.random() * 35),
+                            collectedBy: {}
+                        });
+                    }
+                    if (Math.random() < 0.5) {
+                        trackCollectibles.push({
+                            type: 'star',
+                            x: cursor + 18,
+                            yOffset: 80 + Math.floor(Math.random() * 25),
+                            collectedBy: {}
+                        });
+                    }
+                    cursor += spacingJitter;
+                } else if (roll < 0.80) {
+                    // Hazard Barricade with floating stars or double mystery boxes
+                    trackObjects.push({ type: 'barricade', x: cursor, w: 48, h: 42 });
+                    const topChoice = Math.random();
+                    if (topChoice < 0.6) {
+                        trackCollectibles.push({
+                            type: 'star',
+                            x: cursor + 24,
+                            yOffset: 90 + Math.floor(Math.random() * 25),
+                            collectedBy: {}
+                        });
+                    } else {
+                        trackCollectibles.push({
+                            type: 'mystery',
+                            x: cursor + 24,
+                            yOffset: 98,
+                            collectedBy: {}
+                        });
+                    }
+                    cursor += spacingJitter;
+                } else {
+                    // Construction Mud Pit + Overhead Rainbow Box & bonus stars
+                    const mudW = 115 + Math.floor(Math.random() * 50);
+                    trackObjects.push({ type: 'mud', x: cursor, w: mudW, h: 12 });
+                    trackCollectibles.push({
+                        type: 'mystery',
+                        x: cursor + mudW * 0.5,
+                        yOffset: 75 + Math.floor(Math.random() * 30),
+                        collectedBy: {}
+                    });
+                    if (Math.random() < 0.6) {
+                        trackCollectibles.push({
+                            type: 'star',
+                            x: cursor + mudW + 40,
+                            yOffset: 55,
+                            collectedBy: {}
+                        });
+                    }
+                    cursor += mudW + spacingJitter;
+                }
+            }
+        }
+
+        /**************************************************************
+         * 6. PLAYER STATE & PHYSICS ENGINE
+         **************************************************************/
+        let players = [];
+
+        function createPlayer(id, name, colorObj) {
+            return {
+                id: id,
+                name: name || `Rider ${id}`,
+                color: colorObj,
+                x: 100,
+                y: 0,           // Height above ground
+                vx: 0,
+                vy: 0,
+                angle: 0,       // Wheelie angle in degrees (0 = flat, 40 = sweet spot, 75 = flip)
+                angVel: 0,
+                isFlipping: false,
+                flipProgress: 0,
+                flipsCount: 0,
+                score: 0,
+                wheelieBonus: 0,
+                bestWheelieSec: 0,
+                curWheelieSec: 0,
+                starsCollected: 0,
+                crashedTimer: 0,
+                finished: false,
+                finishTime: 0,
+                // Mario Kart style active power-up
+                powerupType: null, // 'STAR', 'TURBO', '2X'
+                powerupTimer: 0,
+                statusText: '',
+                statusTimer: 0,
+                particles: [],
+                floatingTexts: []
+            };
+        }
+
+        function addFloatingText(p, text, color) {
+            p.floatingTexts.push({
+                text: text,
+                x: p.x,
+                y: p.y + 65,
+                color: color || '#fde047',
+                life: 1.0
+            });
+        }
+
+        function spawnParticles(p, count, color, speedScale = 1) {
+            for (let i = 0; i < count; i++) {
+                p.particles.push({
+                    x: p.x - 18,
+                    y: p.y + 5,
+                    vx: (-40 - Math.random() * 80) * speedScale,
+                    vy: (20 + Math.random() * 60) * speedScale,
+                    size: 3 + Math.random() * 4,
+                    color: color,
+                    life: 0.4 + Math.random() * 0.4
+                });
+            }
+        }
+
+        function updatePlayerPhysics(p, dt, ctrl, diff) {
+            if (p.finished) {
+                p.vx *= 0.95;
+                p.x += p.vx * dt;
+                p.angle *= 0.9;
+                return;
+            }
+
+            // Update timers
+            if (p.powerupTimer > 0) {
+                p.powerupTimer -= dt;
+                if (p.powerupTimer <= 0) p.powerupType = null;
+            }
+            if (p.statusTimer > 0) p.statusTimer -= dt;
+
+            // Crash recovery state
+            if (p.crashedTimer > 0) {
+                p.crashedTimer -= dt;
+                p.vx *= 0.9;
+                p.x += p.vx * dt;
+                p.angle *= 0.85;
+                p.isFlipping = false;
+                p.flipProgress = 0;
+                p.curWheelieSec = 0;
+                return;
+            }
+
+            const isStarPower = p.powerupType === 'STAR';
+            const isTurbo = p.powerupType === 'TURBO';
+            const isMoonGrav = p.powerupType === 'MOON';
+            const isMagnet = p.powerupType === 'MAGNET';
+            const mult = p.powerupType === '3X' ? 3 : (p.powerupType === '2X' ? 2 : 1);
+
+            // 1. Horizontal Acceleration
+            const baseMaxSpeed = 330;
+            const maxSpeed = isTurbo ? 510 : (isStarPower ? 440 : baseMaxSpeed);
+            if (ctrl.gas || isTurbo) {
+                p.vx += (isTurbo ? 420 : 260) * dt;
+                if (Math.random() < 0.35) {
+                    spawnParticles(p, 1, isTurbo ? '#38bdf8' : '#a8a29e', 0.8);
+                }
+            } else {
+                p.vx -= 140 * dt;
+            }
+            p.vx = Math.max(0, Math.min(maxSpeed, p.vx));
+
+            // 2. Jump Input
+            if (ctrl.jump && p.y <= 1) {
+                p.vy = 330;
+                playSound('jump');
+                spawnParticles(p, 6, '#f59e0b', 1.1);
+            }
+
+            // 2b. 360° Flip Input (Spacebar for P1, 0 for P2)
+            if (ctrl.flip && !p.isFlipping) {
+                // If on the ground, pop the bike up into the air to execute the backflip!
+                if (p.y <= 12) {
+                    p.vy = Math.max(p.vy, 380);
+                } else {
+                    p.vy = Math.max(p.vy, 160);
+                }
+                p.isFlipping = true;
+                p.flipProgress = 0;
+                playSound('flip');
+                spawnParticles(p, 12, '#c084fc', 1.4);
+            }
+
+            if (p.isFlipping) {
+                p.flipProgress += 760 * dt; // Fast 360-degree backflip spin
+                if (Math.random() < 0.65) {
+                    spawnParticles(p, 1, '#e879f9', 1.1);
+                }
+                if (p.flipProgress >= 360) {
+                    p.isFlipping = false;
+                    p.flipProgress = 0;
+                    p.flipsCount++;
+                    playSound('flip');
+                    addFloatingText(p, '🔄 360° STYLISH FLIP!', '#e879f9');
+                }
+            }
+
+            // 3. Wheelie Angular Physics
+            if (!p.isFlipping) {
+                if (ctrl.lean && p.vx > 40) {
+                    p.angVel += diff.wheelieTorque * dt;
+                    // Flame sparks when pulling hard wheelie
+                    if (p.angle > diff.sweetSpotMin && Math.random() < 0.4) {
+                        spawnParticles(p, 1, '#f97316', 1.0);
+                    }
+                }
+                if (ctrl.down) {
+                    p.angVel -= diff.wheelieTorque * 1.25 * dt;
+                }
+
+                // Natural gravity pulls front wheel down, unless past balance point where it tips back faster
+                if (p.angle > 0) {
+                    if (p.angle < 52) {
+                        p.angVel -= diff.gravityTorque * dt;
+                    } else {
+                        // Past high balance point: tips backward more easily!
+                        p.angVel += (p.angle - 50) * 1.9 * dt;
+                    }
+                }
+
+                p.angVel *= 0.92; // Angular damping
+                p.angle += p.angVel * dt;
+
+                if (p.angle < 0) {
+                    p.angle = 0;
+                    p.angVel = 0;
+                }
+
+                // Check Flip-Over Backwards Crash!
+                if (p.angle >= diff.flipAngle) {
+                    if (isStarPower) {
+                        // Star power saves you from flipping!
+                        p.angle = diff.sweetSpotMax;
+                        p.angVel = -20;
+                    } else {
+                        p.crashedTimer = 1.15;
+                        p.vx = 40;
+                        p.angle = 0;
+                        p.angVel = 0;
+                        playSound('crash');
+                        p.statusText = '💥 LOOPED OUT! TOO FAR BACK!';
+                        p.statusTimer = 1.5;
+                        spawnParticles(p, 15, '#ef4444', 1.5);
+                        return;
+                    }
+                }
+            }
+
+            // 4. Vertical Gravity & Position Update
+            const gravityAccel = isMoonGrav ? 460 : 850;
+            p.vy -= gravityAccel * dt;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+
+            // 5. Track Obstacles & Ramps Collision
+            let onRampSurface = false;
+            for (const obj of trackObjects) {
+                if (p.x + 22 > obj.x && p.x - 18 < obj.x + obj.w) {
+                    if (obj.type === 'ramp') {
+                        const progress = Math.max(0, Math.min(1, (p.x - obj.x) / obj.w));
+                        const rampHeight = progress * obj.h;
+                        if (p.y <= rampHeight + 10 && p.vy <= 80) {
+                            p.y = rampHeight;
+                            onRampSurface = true;
+                            if (progress > 0.85 && p.vx > 120) {
+                                p.vy = p.vx * 0.92;
+                                playSound('jump');
+                                addFloatingText(p, '🚀 BIG AIR!', '#38bdf8');
+                            } else {
+                                p.vy = 0;
+                            }
+                        }
+                    } else if (obj.type === 'mud') {
+                        if (p.y <= 8 && !isStarPower && !isTurbo) {
+                            p.vx *= 0.92;
+                            if (Math.random() < 0.3) {
+                                spawnParticles(p, 1, '#78350f', 0.6);
+                            }
+                        }
+                    } else if (obj.type === 'cone' || obj.type === 'barricade') {
+                        if (p.y < obj.h - 6) {
+                            if (isStarPower) {
+                                const pts = 100 * mult;
+                                p.score += pts;
+                                addFloatingText(p, `💥 SMASH +${pts}`, '#fde047');
+                                spawnParticles(p, 8, '#f59e0b', 1.4);
+                                obj.x = -9999;
+                            } else {
+                                p.crashedTimer = 1.0;
+                                p.vx = 30;
+                                p.angle = 0;
+                                p.angVel = 0;
+                                playSound('crash');
+                                p.statusText = '🚧 HIT BARRICADE! JUMP NEXT TIME!';
+                                p.statusTimer = 1.4;
+                                spawnParticles(p, 12, '#f97316', 1.3);
+                                obj.x = -9999;
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!onRampSurface && p.y <= 0) {
+                p.y = 0;
+                p.vy = 0;
+            }
+
+            // 6. Check Collectibles (Stars & Mario Kart Mystery Boxes)
+            for (const item of trackCollectibles) {
+                if (item.collectedBy[p.id]) continue;
+
+                // Star Magnet pulls nearby stars and mystery boxes right toward the rider!
+                if (isMagnet) {
+                    const distX = p.x - item.x;
+                    const distY = (p.y + 28) - item.yOffset;
+                    if (Math.abs(distX) < 220 && Math.abs(distY) < 160) {
+                        item.x += distX * 6 * dt;
+                        item.yOffset += distY * 6 * dt;
+                    }
+                }
+
+                const dx = p.x - item.x;
+                const dy = (p.y + 28) - item.yOffset;
+                if (Math.abs(dx) < 36 && Math.abs(dy) < 40) {
+                    item.collectedBy[p.id] = true;
+                    if (item.type === 'star') {
+                        // Randomized star value between 125 and 250!
+                        const baseStar = 125 + Math.floor(Math.random() * 6) * 25;
+                        const pts = baseStar * mult;
+                        p.score += pts;
+                        p.starsCollected++;
+                        playSound('star');
+                        addFloatingText(p, `⭐ STAR +${pts}`, '#fde047');
+                        spawnParticles(p, 8, '#fde047', 1.2);
+                    } else if (item.type === 'mystery') {
+                        playSound('box');
+                        // 7 Randomized Mario Kart-style Rewards!
+                        const rewards = ['STAR', 'TURBO', '2X', '3X', 'MAGNET', 'MOON', 'JACKPOT'];
+                        const chosen = rewards[Math.floor(Math.random() * rewards.length)];
+                        const randomDuration = 4.5 + Math.random() * 3.0;
+
+                        if (chosen === 'JACKPOT') {
+                            const jackpotPts = (400 + Math.floor(Math.random() * 7) * 100) * mult;
+                            p.score += jackpotPts;
+                            p.statusText = `💰 MYSTERY JACKPOT! +${jackpotPts} PTS!`;
+                            addFloatingText(p, `💰 JACKPOT +${jackpotPts}!`, '#4ade80');
+                        } else {
+                            p.powerupType = chosen;
+                            p.powerupTimer = randomDuration;
+                            if (chosen === 'STAR') {
+                                p.statusText = '🌟 SUPER STAR POWER! INVINCIBLE!';
+                                addFloatingText(p, '🌟 STAR POWER!', '#fde047');
+                            } else if (chosen === 'TURBO') {
+                                p.statusText = '🍄 GOLDEN MUSHROOM TURBO!';
+                                addFloatingText(p, '🍄 TURBO BOOST!', '#38bdf8');
+                            } else if (chosen === '2X') {
+                                p.statusText = '⚡ 2X DOUBLE POINTS ACTIVE!';
+                                addFloatingText(p, '⚡ 2X POINTS!', '#c084fc');
+                            } else if (chosen === '3X') {
+                                p.statusText = '🔥 3X TRIPLE FRENZY ACTIVE!';
+                                addFloatingText(p, '🔥 3X POINTS!', '#f43f5e');
+                            } else if (chosen === 'MAGNET') {
+                                p.statusText = '🧲 STAR MAGNET! PULLING LOOT!';
+                                addFloatingText(p, '🧲 STAR MAGNET!', '#38bdf8');
+                            } else if (chosen === 'MOON') {
+                                p.vy = Math.max(p.vy, 320);
+                                p.statusText = '🚀 MOON GRAVITY! HUGE AIRTIME!';
+                                addFloatingText(p, '🚀 MOON GRAVITY!', '#a78bfa');
+                            }
+                        }
+                        p.statusTimer = 2.4;
+                        spawnParticles(p, 16, '#c084fc', 1.6);
+                    }
+                }
+            }
+
+            // 7. Wheelie Scoring Calculation
+            if (p.vx > 60 && p.angle >= diff.sweetSpotMin && p.angle <= diff.sweetSpotMax) {
+                p.curWheelieSec += dt;
+                if (p.curWheelieSec > p.bestWheelieSec) {
+                    p.bestWheelieSec = p.curWheelieSec;
+                }
+                const comboMultiplier = 1 + Math.floor(p.curWheelieSec / 1.5) * 0.5;
+                const pts = 110 * dt * comboMultiplier * mult;
+                p.score += pts;
+                p.wheelieBonus += pts;
+            } else if (p.angle < 10) {
+                p.curWheelieSec = 0;
+            }
+
+            // 8. Update Particles & Floating Text
+            for (let i = p.particles.length - 1; i >= 0; i--) {
+                const pt = p.particles[i];
+                pt.x += pt.vx * dt;
+                pt.y += pt.vy * dt;
+                pt.life -= dt;
+                if (pt.life <= 0) p.particles.splice(i, 1);
+            }
+            for (let i = p.floatingTexts.length - 1; i >= 0; i--) {
+                const ft = p.floatingTexts[i];
+                ft.y += 35 * dt;
+                ft.life -= dt;
+                if (ft.life <= 0) p.floatingTexts.splice(i, 1);
+            }
+
+            // 9. Check Finish Line
+            if (p.x >= diff.trackLength) {
+                p.finished = true;
+                p.score += 500;
+                playSound('win');
+                addFloatingText(p, '🏁 FINISHED! +500', '#4ade80');
+                checkRaceEnd();
+            }
+        }
+
+        /**************************************************************
+         * 7. RENDERING ENGINE (CONSTRUCTION SITE, BIKE, HUD)
+         **************************************************************/
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function drawViewport(p, vx, vy, vw, vh, diff, timeSec) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(vx, vy, vw, vh);
+            ctx.clip();
+
+            const groundY = vy + vh * 0.77;
+            const camX = p.x - vw * 0.24;
+
+            // 1. Sky Gradient
+            const skyGrad = ctx.createLinearGradient(0, vy, 0, groundY);
+            skyGrad.addColorStop(0, diff.skyTop);
+            skyGrad.addColorStop(1, diff.skyBot);
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(vx, vy, vw, groundY - vy);
+
+            // 2. Parallax Construction Cranes & Steel Girders
+            ctx.save();
+            const parallaxCam = camX * 0.35;
+            for (const c of bgCranes) {
+                const sx = vx + (c.x - parallaxCam);
+                if (sx < vx - 250 || sx > vx + vw + 250) continue;
+
+                // Silhouette Building under construction
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.55)';
+                ctx.fillRect(sx - 40, groundY - c.buildingH, c.buildingW, c.buildingH);
+
+                // Tower Crane Mast
+                ctx.strokeStyle = 'rgba(245, 158, 11, 0.45)';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(sx, groundY - c.height, 14, c.height);
+
+                // Crane Horizontal Jib Arm
+                ctx.beginPath();
+                ctx.moveTo(sx - 25, groundY - c.height);
+                ctx.lineTo(sx + c.armLength, groundY - c.height);
+                ctx.stroke();
+
+                // Hanging Hook Cable
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(sx + c.armLength - 20, groundY - c.height);
+                ctx.lineTo(sx + c.armLength - 20, groundY - c.height + 40);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // 3. Dirt Ground & Caution Fence
+            ctx.fillStyle = '#451a03';
+            ctx.fillRect(vx, groundY, vw, vh - (groundY - vy));
+            ctx.fillStyle = '#78350f';
+            ctx.fillRect(vx, groundY, vw, 14);
+
+            // Hazard Stripe Fence Along Track
+            const stripeOffset = -(camX % 40);
+            for (let sx = vx + stripeOffset - 40; sx < vx + vw + 40; sx += 40) {
+                ctx.fillStyle = '#f59e0b';
+                ctx.fillRect(sx, groundY - 8, 20, 8);
+                ctx.fillStyle = '#1f2937';
+                ctx.fillRect(sx + 20, groundY - 8, 20, 8);
+            }
+
+            // 4. Draw Track Obstacles (Ramps, Cones, Barricades, Mud)
+            for (const obj of trackObjects) {
+                const sx = vx + (obj.x - camX);
+                if (sx + obj.w < vx - 50 || sx > vx + vw + 50) continue;
+
+                if (obj.type === 'ramp') {
+                    ctx.fillStyle = '#d97706';
+                    ctx.beginPath();
+                    ctx.moveTo(sx, groundY);
+                    ctx.lineTo(sx + obj.w, groundY - obj.h);
+                    ctx.lineTo(sx + obj.w, groundY);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.strokeStyle = '#fef08a';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                } else if (obj.type === 'mud') {
+                    ctx.fillStyle = '#3f200b';
+                    ctx.beginPath();
+                    ctx.ellipse(sx + obj.w / 2, groundY + 3, obj.w / 2, 9, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (obj.type === 'cone') {
+                    ctx.fillStyle = '#f97316';
+                    ctx.beginPath();
+                    ctx.moveTo(sx + 4, groundY);
+                    ctx.lineTo(sx + obj.w / 2, groundY - obj.h);
+                    ctx.lineTo(sx + obj.w - 4, groundY);
+                    ctx.closePath();
+                    ctx.fill();
+                    // White reflective band
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(sx + 11, groundY - obj.h * 0.55, obj.w - 22, 6);
+                } else if (obj.type === 'barricade') {
+                    // Steel legs
+                    ctx.fillStyle = '#374151';
+                    ctx.fillRect(sx + 6, groundY - obj.h, 6, obj.h);
+                    ctx.fillRect(sx + obj.w - 12, groundY - obj.h, 6, obj.h);
+                    // Striped board
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.fillRect(sx, groundY - obj.h + 4, obj.w, 18);
+                    ctx.fillStyle = '#111827';
+                    ctx.fillRect(sx + 10, groundY - obj.h + 4, 10, 18);
+                    ctx.fillRect(sx + 30, groundY - obj.h + 4, 10, 18);
+                }
+            }
+
+            // 5. Draw Collectibles (Stars & Mario Kart Mystery Boxes)
+            for (const item of trackCollectibles) {
+                if (item.collectedBy[p.id]) continue;
+                const sx = vx + (item.x - camX);
+                if (sx < vx - 50 || sx > vx + vw + 50) continue;
+                const bob = Math.sin(timeSec * 5 + item.x) * 5;
+                const sy = groundY - item.yOffset + bob;
+
+                if (item.type === 'star') {
+                    drawStarShape(ctx, sx, sy, 5, 15, 7, '#fde047', '#f59e0b');
+                } else if (item.type === 'mystery') {
+                    // Rainbow Mario Kart style Mystery Box
+                    const hue = (timeSec * 120 + item.x) % 360;
+                    ctx.save();
+                    ctx.translate(sx, sy);
+                    ctx.rotate(Math.sin(timeSec * 3) * 0.15);
+                    ctx.fillStyle = `hsl(${hue}, 90%, 55%)`;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2.5;
+                    ctx.fillRect(-15, -15, 30, 30);
+                    ctx.strokeRect(-15, -15, 30, 30);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = '900 18px Inter';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('?', 0, 1);
+                    ctx.restore();
+                }
+            }
+
+            // 6. Finish Line Banner
+            const finishScreenX = vx + (diff.trackLength - camX);
+            if (finishScreenX > vx - 100 && finishScreenX < vx + vw + 100) {
+                ctx.fillStyle = '#e5e7eb';
+                ctx.fillRect(finishScreenX, groundY - 130, 8, 130);
+                // Checkered Flag Banner
+                for (let r = 0; r < 3; r++) {
+                    for (let c = 0; c < 6; c++) {
+                        ctx.fillStyle = (r + c) % 2 === 0 ? '#ffffff' : '#111827';
+                        ctx.fillRect(finishScreenX - 30 + c * 12, groundY - 130 + r * 12, 12, 12);
+                    }
+                }
+            }
+
+            // 7. Draw Particles & Floating Texts
+            for (const pt of p.particles) {
+                const px = vx + (pt.x - camX);
+                const py = groundY - pt.y;
+                ctx.fillStyle = pt.color;
+                ctx.beginPath();
+                ctx.arc(px, py, pt.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            for (const ft of p.floatingTexts) {
+                const fx = vx + (ft.x - camX);
+                const fy = groundY - ft.y;
+                ctx.font = '900 14px Inter';
+                ctx.fillStyle = ft.color;
+                ctx.textAlign = 'center';
+                ctx.fillText(ft.text, fx, fy);
+            }
+
+            // 8. Draw Motorbike & Rider
+            const bikeScreenX = vx + (p.x - camX);
+            const bikeScreenY = groundY - p.y;
+            drawMotorbike(ctx, p, bikeScreenX, bikeScreenY, timeSec);
+
+            // 9. Draw HUD (Score, Wheelie Sweet-Spot Gauge, Track Progress)
+            drawPlayerHUD(ctx, p, vx, vy, vw, vh, diff);
+
+            ctx.restore();
+        }
+
+        function drawStarShape(ctx, cx, cy, spikes, outerR, innerR, fill, stroke) {
+            let rot = Math.PI / 2 * 3;
+            let x = cx;
+            let y = cy;
+            const step = Math.PI / spikes;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerR);
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outerR;
+                y = cy + Math.sin(rot) * outerR;
+                ctx.lineTo(x, y);
+                rot += step;
+                x = cx + Math.cos(rot) * innerR;
+                y = cy + Math.sin(rot) * innerR;
+                ctx.lineTo(x, y);
+                rot += step;
+            }
+            ctx.lineTo(cx, cy - outerR);
+            ctx.closePath();
+            ctx.fillStyle = fill;
+            ctx.fill();
+            ctx.strokeStyle = stroke;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function drawMotorbike(ctx, p, sx, sy, timeSec) {
+            ctx.save();
+            // Pivot around the rear wheel contact point for realistic wheelies, or center of bike when mid-air flipping!
+            const wheelRadius = 15;
+            const rearWheelX = sx - 20;
+            const rearWheelY = sy - wheelRadius;
+
+            ctx.translate(rearWheelX, rearWheelY);
+            if (p.isFlipping) {
+                ctx.translate(23, -18);
+                ctx.rotate((-(p.angle + p.flipProgress) * Math.PI) / 180);
+                ctx.translate(-23, 18);
+            } else {
+                ctx.rotate((-p.angle * Math.PI) / 180);
+            }
+
+            // Rainbow aura if Star Power is active
+            if (p.powerupType === 'STAR') {
+                const hue = (timeSec * 360) % 360;
+                ctx.shadowColor = `hsl(${hue}, 100%, 60%)`;
+                ctx.shadowBlur = 20;
+            }
+
+            const bikeHex = p.powerupType === 'STAR'
+                ? `hsl(${(timeSec * 300) % 360}, 95%, 55%)`
+                : p.color.hex;
+
+            // Rear & Front Tires
+            ctx.fillStyle = '#111827';
+            ctx.strokeStyle = '#374151';
+            ctx.lineWidth = 4;
+
+            // Rear Wheel (at 0,0)
+            ctx.beginPath();
+            ctx.arc(0, 0, wheelRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = p.color.rim;
+            ctx.beginPath();
+            ctx.arc(0, 0, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Front Wheel (at +46, 0)
+            ctx.fillStyle = '#111827';
+            ctx.beginPath();
+            ctx.arc(46, 0, wheelRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = p.color.rim;
+            ctx.beginPath();
+            ctx.arc(46, 0, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Exhaust Pipe
+            ctx.strokeStyle = '#9ca3af';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(-14, -6);
+            ctx.lineTo(14, -4);
+            ctx.stroke();
+
+            // Front Forks
+            ctx.strokeStyle = '#d1d5db';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(46, 0);
+            ctx.lineTo(32, -28);
+            ctx.stroke();
+
+            // Main Bike Frame / Bodywork
+            ctx.fillStyle = bikeHex;
+            ctx.beginPath();
+            ctx.moveTo(-8, -14);
+            ctx.lineTo(16, -26);
+            ctx.lineTo(36, -24);
+            ctx.lineTo(26, -8);
+            ctx.closePath();
+            ctx.fill();
+
+            // Rider Legs & Torso
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(8, -12);
+            ctx.lineTo(14, -24);
+            ctx.lineTo(6, -38);
+            ctx.stroke();
+
+            // Rider Hi-Vis Construction Vest
+            ctx.fillStyle = bikeHex;
+            ctx.fillRect(2, -40, 11, 15);
+
+            // Rider Arms reaching to Handlebars
+            ctx.strokeStyle = '#f8fafc';
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            ctx.moveTo(10, -37);
+            ctx.lineTo(30, -28);
+            ctx.stroke();
+
+            // Rider Helmet + Hardhat Visor
+            ctx.fillStyle = '#fbbf24';
+            ctx.beginPath();
+            ctx.arc(10, -46, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(12, -49, 6, 5);
+
+            // Crash Stars if recovering
+            if (p.crashedTimer > 0) {
+                ctx.fillStyle = '#fde047';
+                ctx.font = 'bold 14px Inter';
+                ctx.fillText('💫 CRASH!', -10, -60);
+            }
+
+            ctx.restore();
+        }
+
+        function drawPlayerHUD(ctx, p, vx, vy, vw, vh, diff) {
+            // Top Left Player Card
+            ctx.fillStyle = 'rgba(17, 24, 39, 0.82)';
+            ctx.fillRect(vx + 12, vy + 10, 215, 64);
+            ctx.strokeStyle = p.color.hex;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(vx + 12, vy + 10, 215, 64);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 15px Inter';
+            ctx.textAlign = 'left';
+            ctx.fillText(`${p.name.toUpperCase()}`, vx + 22, vy + 30);
+
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = '800 14px Inter';
+            ctx.fillText(`SCORE: ${Math.floor(p.score)}`, vx + 22, vy + 49);
+
+            ctx.fillStyle = '#fde047';
+            ctx.font = '700 12px Inter';
+            ctx.fillText(`⭐ ${p.starsCollected}   🔄 Flips: ${p.flipsCount}   ⏱️ ${p.bestWheelieSec.toFixed(1)}s`, vx + 22, vy + 66);
+
+            // Active Mario-Kart Powerup Badge
+            if (p.powerupType) {
+                ctx.fillStyle = 'rgba(88, 28, 135, 0.9)';
+                ctx.fillRect(vx + 236, vy + 10, 145, 42);
+                ctx.strokeStyle = '#fde047';
+                ctx.strokeRect(vx + 236, vy + 10, 145, 42);
+                ctx.fillStyle = '#fde047';
+                ctx.font = '900 12px Inter';
+                ctx.fillText(`ITEM: ${p.powerupType}`, vx + 246, vy + 28);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(`${p.powerupTimer.toFixed(1)}s left`, vx + 246, vy + 44);
+            }
+
+            // Center Wheelie Balance Meter
+            const meterW = 180;
+            const meterH = 16;
+            const mx = vx + vw / 2 - meterW / 2;
+            const my = vy + 14;
+
+            ctx.fillStyle = 'rgba(17, 24, 39, 0.85)';
+            ctx.fillRect(mx - 6, my - 6, meterW + 12, meterH + 26);
+
+            // Grey low zone
+            ctx.fillStyle = '#4b5563';
+            ctx.fillRect(mx, my, meterW, meterH);
+
+            // Green Sweet Spot zone
+            const sweetStart = (diff.sweetSpotMin / diff.flipAngle) * meterW;
+            const sweetWidth = ((diff.sweetSpotMax - diff.sweetSpotMin) / diff.flipAngle) * meterW;
+            ctx.fillStyle = '#22c55e';
+            ctx.fillRect(mx + sweetStart, my, sweetWidth, meterH);
+
+            // Red Danger Flip zone
+            const dangerStart = (diff.sweetSpotMax / diff.flipAngle) * meterW;
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(mx + dangerStart, my, meterW - dangerStart, meterH);
+
+            // Current Angle Marker
+            const clampedAngle = Math.max(0, Math.min(diff.flipAngle, p.angle));
+            const markerX = mx + (clampedAngle / diff.flipAngle) * meterW;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(markerX - 3, my - 3, 6, meterH + 6);
+
+            // Label under meter
+            ctx.font = '800 11px Inter';
+            ctx.textAlign = 'center';
+            const inSweetSpot = p.angle >= diff.sweetSpotMin && p.angle <= diff.sweetSpotMax && p.vx > 60;
+            ctx.fillStyle = inSweetSpot ? '#4ade80' : '#d1d5db';
+            ctx.fillText(
+                inSweetSpot ? `🔥 SWEET SPOT WHEELIE! (${p.curWheelieSec.toFixed(1)}s)` : 'WHEELIE BALANCE METER',
+                vx + vw / 2,
+                my + meterH + 14
+            );
+
+            // Track Progress Bar (Top Right)
+            const progW = 140;
+            const px = vx + vw - progW - 16;
+            const py = vy + 18;
+            const pct = Math.max(0, Math.min(1, p.x / diff.trackLength));
+
+            ctx.fillStyle = 'rgba(17, 24, 39, 0.8)';
+            ctx.fillRect(px, py, progW, 12);
+            ctx.fillStyle = p.color.hex;
+            ctx.fillRect(px, py, progW * pct, 12);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(px, py, progW, 12);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '700 11px Inter';
+            ctx.textAlign = 'right';
+            ctx.fillText(`TRACK: ${Math.floor(pct * 100)}%`, px + progW, py + 26);
+
+            // Status Banner (Center Screen Alerts)
+            if (p.statusTimer > 0 && p.statusText) {
+                ctx.font = '900 18px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#fde047';
+                ctx.fillText(p.statusText, vx + vw / 2, vy + vh * 0.32);
+            }
+        }
+
+        /**************************************************************
+         * 8. MAIN GAME LOOP & LIFECYCLE
+         **************************************************************/
+        let lastFrameTime = performance.now();
+
+        function startGame() {
+            initAudio();
+            resizeCanvas();
+
+            const diff = DIFFICULTIES[currentDiffIndex];
+            const badge = document.getElementById('diffBadge');
+            badge.textContent = diff.name;
+            badge.className = `text-xs font-extrabold px-2.5 py-0.5 rounded uppercase ${diff.badgeClass}`;
+
+            generateConstructionTrack(diff);
+
+            const p1Name = document.getElementById('p1Name').value.trim() || 'Blaze';
+            const p2Name = document.getElementById('p2Name').value.trim() || 'Nitro';
+
+            players = [createPlayer(1, p1Name, BIKE_COLORS[p1ColorIndex])];
+            if (numPlayers === 2) {
+                players.push(createPlayer(2, p2Name, BIKE_COLORS[p2ColorIndex]));
+            }
+
+            // Configure touch rows for 1P or 2P
+            const p1TouchRow = document.getElementById('p1TouchRow');
+            const p2TouchRow = document.getElementById('p2TouchRow');
+            if (numPlayers === 2) {
+                p1TouchRow.classList.remove('mt-auto');
+                p1TouchRow.classList.add('mt-12');
+                p2TouchRow.classList.remove('hidden');
+                p2TouchRow.classList.add('flex');
+            } else {
+                p1TouchRow.classList.add('mt-auto');
+                p1TouchRow.classList.remove('mt-12');
+                p2TouchRow.classList.add('hidden');
+                p2TouchRow.classList.remove('flex');
+            }
+
+            document.getElementById('setupScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.remove('flex');
+
+            gameActive = true;
+            lastFrameTime = performance.now();
+        }
+
+        function restartRace() {
+            startGame();
+        }
+
+        function checkRaceEnd() {
+            const allDone = players.every(p => p.finished);
+            if (!allDone) return;
+
+            setTimeout(() => {
+                gameActive = false;
+                const resultsModal = document.getElementById('resultsScreen');
+                const content = document.getElementById('resultsContent');
+                const banner = document.getElementById('winnerBanner');
+
+                let html = '';
+                if (players.length === 1) {
+                    const p = players[0];
+                    banner.textContent = `🏁 ${p.name.toUpperCase()} FINISHED!`;
+                    html = `
+                        <div class="bg-gray-900 p-4 rounded-xl border-2 border-amber-500 text-left space-y-1">
+                            <div class="text-2xl font-black text-amber-400">TOTAL SCORE: ${Math.floor(p.score)}</div>
+                            <div class="text-sm text-gray-300">🔥 Wheelie Bonus Points: <strong>${Math.floor(p.wheelieBonus)}</strong></div>
+                            <div class="text-sm text-gray-300">🔄 360° Flips Landed: <strong>${p.flipsCount}</strong></div>
+                            <div class="text-sm text-gray-300">⏱️ Longest Wheelie: <strong>${p.bestWheelieSec.toFixed(1)} seconds</strong></div>
+                            <div class="text-sm text-gray-300">⭐ Stars Collected: <strong>${p.starsCollected}</strong></div>
+                        </div>
+                    `;
+                } else {
+                    const sorted = [...players].sort((a, b) => b.score - a.score);
+                    banner.textContent = `🏆 ${sorted[0].name.toUpperCase()} WINS!`;
+                    sorted.forEach((p, idx) => {
+                        const medal = idx === 0 ? '🥇 1ST PLACE' : '🥈 2ND PLACE';
+                        html += `
+                            <div class="bg-gray-900 p-4 rounded-xl border-2 ${idx === 0 ? 'border-amber-400' : 'border-gray-700'} text-left">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-black text-lg text-white">${medal} - ${p.name}</span>
+                                    <span class="font-black text-xl text-amber-400">${Math.floor(p.score)} PTS</span>
+                                </div>
+                                <div class="text-xs text-gray-400 mt-1">
+                                    Best Wheelie: ${p.bestWheelieSec.toFixed(1)}s  |  Flips: 🔄 ${p.flipsCount}  |  Stars: ⭐ ${p.starsCollected}
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                content.innerHTML = html;
+                resultsModal.classList.remove('hidden');
+                resultsModal.classList.add('flex');
+            }, 600);
+        }
+
+        function gameLoop(now) {
+            const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+            lastFrameTime = now;
+            const timeSec = now / 1000;
+
+            const diff = DIFFICULTIES[currentDiffIndex];
+
+            if (gameActive && players.length > 0) {
+                // Update Player 1
+                updatePlayerPhysics(players[0], dt, {
+                    gas: keys.p1Gas,
+                    lean: keys.p1Lean,
+                    down: keys.p1Down,
+                    jump: keys.p1Jump,
+                    flip: keys.p1Flip
+                }, diff);
+
+                // Update Player 2 if active
+                if (players.length === 2) {
+                    updatePlayerPhysics(players[1], dt, {
+                        gas: keys.p2Gas,
+                        lean: keys.p2Lean,
+                        down: keys.p2Down,
+                        jump: keys.p2Jump,
+                        flip: keys.p2Flip
+                    }, diff);
+                }
+            }
+
+            // Render Viewports
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (players.length === 1) {
+                drawViewport(players[0], 0, 0, canvas.width, canvas.height, diff, timeSec);
+            } else if (players.length === 2) {
+                const halfH = canvas.height / 2;
+                drawViewport(players[0], 0, 0, canvas.width, halfH, diff, timeSec);
+                drawViewport(players[1], 0, halfH, canvas.width, halfH, diff, timeSec);
+
+                // Split-screen Hazard Divider Line
+                ctx.fillStyle = '#f59e0b';
+                ctx.fillRect(0, halfH - 3, canvas.width, 6);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.onload = function () {
+            renderColorPickers();
+            resizeCanvas();
+            // Create preview state behind modal
+            generateConstructionTrack(DIFFICULTIES[0]);
+            players = [createPlayer(1, 'Blaze', BIKE_COLORS[0])];
+            requestAnimationFrame(gameLoop);
+        };
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Construction Site Wheelie Madness</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+            background-color: #111827;
+        }
+        .game-font {
+            font-family: 'Black Ops One', cursive;
+        }
+        .hazard-stripes {
+            background: repeating-linear-gradient(
+                45deg,
+                #f59e0b,
+                #f59e0b 15px,
+                #1f2937 15px,
+                #1f2937 30px
+            );
+        }
+        .color-swatch {
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .color-swatch.selected {
+            transform: scale(1.2);
+            box-shadow: 0 0 0 3px #fff, 0 0 12px #f59e0b;
+        }
+        .touch-btn {
+            background: rgba(17, 24, 39, 0.75);
+            border: 2px solid rgba(245, 158, 11, 0.8);
+            backdrop-filter: blur(4px);
+            touch-action: manipulation;
+        }
+        .touch-btn:active {
+            background: rgba(245, 158, 11, 0.9);
+            color: #000;
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex flex-col items-center justify-center relative">
+
+    <!-- WELCOME / SETUP MODAL -->
+    <div id="setupScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/90 p-3 overflow-y-auto">
+        <div class="bg-gray-800 border-4 border-amber-500 rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl my-auto">
+            <!-- Top Hazard Banner -->
+            <div class="hazard-stripes h-5 w-full"></div>
+            
+            <div class="p-5 md:p-7 space-y-5">
+                <div class="text-center">
+                    <h1 class="game-font text-3xl md:text-5xl text-amber-400 tracking-wider drop-shadow-[0_3px_3px_rgba(0,0,0,0.9)]">
+                        🏗️ WHEELIE MADNESS
+                    </h1>
+                    <p class="text-gray-300 text-xs md:text-sm mt-1 font-semibold uppercase tracking-widest">
+                        Construction Zone Stunt Championship
+                    </p>
+                </div>
+
+                <!-- Mode & Difficulty Row -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-900/90 p-4 rounded-xl border border-gray-700">
+                    <!-- Player Mode -->
+                    <div>
+                        <label class="block text-amber-400 font-bold text-xs uppercase mb-2 tracking-wider">1. Select Players</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="mode1P" onclick="setPlayerCount(1)" class="py-2.5 px-4 rounded-lg font-extrabold text-sm border-2 border-amber-500 bg-amber-500 text-gray-900 transition">
+                                1 PLAYER
+                            </button>
+                            <button id="mode2P" onclick="setPlayerCount(2)" class="py-2.5 px-4 rounded-lg font-extrabold text-sm border-2 border-gray-600 bg-gray-800 text-gray-300 hover:border-amber-400 transition">
+                                2 PLAYERS (Split)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Difficulty Level -->
+                    <div>
+                        <label class="block text-amber-400 font-bold text-xs uppercase mb-2 tracking-wider">2. Construction Site Difficulty</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button id="diff0" onclick="setDifficulty(0)" class="py-2.5 px-2 rounded-lg font-extrabold text-xs border-2 border-green-500 bg-green-500 text-gray-950 transition">
+                                APPRENTICE
+                            </button>
+                            <button id="diff1" onclick="setDifficulty(1)" class="py-2.5 px-2 rounded-lg font-extrabold text-xs border-2 border-gray-600 bg-gray-800 text-gray-300 hover:border-amber-400 transition">
+                                FOREMAN
+                            </button>
+                            <button id="diff2" onclick="setDifficulty(2)" class="py-2.5 px-2 rounded-lg font-extrabold text-xs border-2 border-gray-600 bg-gray-800 text-gray-300 hover:border-red-500 transition">
+                                DAREDEVIL
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Player Customization Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Player 1 -->
+                    <div class="bg-gray-900 p-4 rounded-xl border-2 border-amber-500/60">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="game-font text-lg text-amber-400">PLAYER 1</span>
+                            <span class="text-xs bg-gray-800 text-amber-300 px-2.5 py-1 rounded font-mono border border-gray-700">WASD + SPACE (Flip)</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="block text-gray-400 text-xs font-semibold mb-1">RIDER NAME</label>
+                            <input id="p1Name" type="text" maxlength="12" value="Blaze" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-1.5 text-white font-bold focus:outline-none focus:border-amber-400">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 text-xs font-semibold mb-2">BIKE COLOUR (6 Choices)</label>
+                            <div id="p1Colors" class="flex items-center justify-between px-1"></div>
+                        </div>
+                    </div>
+
+                    <!-- Player 2 -->
+                    <div id="p2Card" class="bg-gray-900 p-4 rounded-xl border-2 border-sky-500/60 opacity-40 pointer-events-none transition-opacity">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="game-font text-lg text-sky-400">PLAYER 2</span>
+                            <span class="text-xs bg-gray-800 text-sky-300 px-2.5 py-1 rounded font-mono border border-gray-700">ARROWS + 0 (Flip)</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="block text-gray-400 text-xs font-semibold mb-1">RIDER NAME</label>
+                            <input id="p2Name" type="text" maxlength="12" value="Nitro" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-1.5 text-white font-bold focus:outline-none focus:border-sky-400">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 text-xs font-semibold mb-2">BIKE COLOUR (6 Choices)</label>
+                            <div id="p2Colors" class="flex items-center justify-between px-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instructions & Powerups -->
+                <div class="bg-gray-900/95 p-4 rounded-xl border border-gray-700 text-xs md:text-sm text-gray-300 space-y-2">
+                    <div class="font-bold text-amber-400 uppercase tracking-wider">📋 Site Rules & Instructions:</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <ul class="list-disc list-inside space-y-1">
+                            <li><strong class="text-white">Accelerate:</strong> Hold <span class="text-amber-300 font-mono">D</span> (P1) or <span class="text-sky-300 font-mono">Right Arrow</span> (P2).</li>
+                            <li><strong class="text-white">Pop a Wheelie:</strong> Tap/Hold <span class="text-amber-300 font-mono">A</span> (P1) or <span class="text-sky-300 font-mono">Left Arrow</span> (P2) to lean back!</li>
+                            <li><strong class="text-white">Jump Obstacles:</strong> Press <span class="text-amber-300 font-mono">W</span> (P1) or <span class="text-sky-300 font-mono">Up Arrow</span> (P2) to leap over barricades.</li>
+                            <li><strong class="text-purple-400">360° Stunt Flip:</strong> Press <span class="text-amber-300 font-mono">SPACEBAR</span> (P1) or <span class="text-sky-300 font-mono">0</span> (P2) to show off (0 PTS)!</li>
+                        </ul>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li><strong class="text-green-400">Sweet Spot Zone:</strong> Keep your wheelie balanced in the green gauge for massive points! Don't flip over backwards!</li>
+                            <li><strong class="text-yellow-300">❓ Random Mystery Rewards:</strong> Hit Rainbow Boxes for Star Power, Turbo, 2X/3X Points, Star Magnet, Moon Gravity, or Jackpot Prizes!</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Start Button -->
+                <button onclick="startGame()" class="w-full py-4 rounded-xl game-font text-2xl md:text-3xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-gray-950 font-black tracking-wider shadow-[0_0_25px_rgba(245,158,11,0.6)] hover:brightness-110 active:scale-[0.99] transition">
+                    🚦 START ENGINE & RIDE!
+                </button>
+            </div>
+            <div class="hazard-stripes h-5 w-full"></div>
+        </div>
+    </div>
+
+    <!-- FINISH / RESULTS MODAL -->
+    <div id="resultsScreen" class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-950/90 p-4">
+        <div class="bg-gray-800 border-4 border-amber-500 rounded-2xl max-w-xl w-full overflow-hidden shadow-2xl text-center">
+            <div class="hazard-stripes h-5 w-full"></div>
+            <div class="p-6 space-y-5">
+                <h2 id="winnerBanner" class="game-font text-3xl md:text-4xl text-amber-400">🏁 TRACK COMPLETE!</h2>
+                <div id="resultsContent" class="space-y-3"></div>
+                <div class="flex gap-3 pt-2">
+                    <button onclick="restartRace()" class="flex-1 py-3 rounded-xl game-font text-xl bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold transition">
+                        🔄 PLAY AGAIN
+                    </button>
+                    <button onclick="showSetup()" class="flex-1 py-3 rounded-xl game-font text-xl bg-gray-700 hover:bg-gray-600 text-white font-bold transition">
+                        ⚙️ CHANGE SETUP
+                    </button>
+                </div>
+            </div>
+            <div class="hazard-stripes h-5 w-full"></div>
+        </div>
+    </div>
+
+    <!-- TOP BAR DURING GAMEPLAY -->
+    <div class="w-full bg-gray-900 border-b-2 border-amber-500 px-4 py-2 flex items-center justify-between z-20 shrink-0">
+        <div class="flex items-center gap-3">
+            <span class="game-font text-amber-400 text-lg md:text-xl tracking-wider">🏗️ WHEELIE MADNESS</span>
+            <span id="diffBadge" class="text-xs font-extrabold px-2.5 py-0.5 rounded bg-amber-500 text-gray-950 uppercase">Apprentice</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="toggleMute()" id="muteBtn" class="px-3 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-bold border border-gray-600">
+                🔊 SOUND ON
+            </button>
+            <button onclick="showSetup()" class="px-3 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-amber-400 text-xs font-bold border border-amber-500/50">
+                ⚙️ MENU
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN GAME CANVAS CONTAINER -->
+    <div class="relative flex-1 w-full overflow-hidden flex items-center justify-center bg-gray-950">
+        <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+
+        <!-- MOBILE / TOUCH CONTROLS OVERLAY -->
+        <div id="touchOverlay" class="pointer-events-none absolute inset-0 flex flex-col justify-between p-2 z-30">
+            <!-- Player 1 Touch Controls (Top half in 2P, or Bottom in 1P) -->
+            <div id="p1TouchRow" class="w-full flex justify-between items-end mt-auto pb-1">
+                <div class="flex gap-2 pointer-events-auto">
+                    <button id="t_p1_lean" class="touch-btn text-amber-400 font-black px-3 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        ↖️ WHEELIE
+                    </button>
+                    <button id="t_p1_down" class="touch-btn text-amber-300 font-black px-3 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        ↘️ DOWN
+                    </button>
+                </div>
+                <div class="flex gap-2 pointer-events-auto">
+                    <button id="t_p1_flip" class="touch-btn text-purple-400 font-black px-3 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        🔄 FLIP
+                    </button>
+                    <button id="t_p1_jump" class="touch-btn text-yellow-300 font-black px-3 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        ⏫ JUMP
+                    </button>
+                    <button id="t_p1_gas" class="touch-btn text-green-400 font-black px-4 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        ⛽ GAS
+                    </button>
+                </div>
+            </div>
+
+            <!-- Player 2 Touch Controls (Shown only in 2P mode at the bottom) -->
+            <div id="p2TouchRow" class="w-full hidden justify-between items-end pb-1">
+                <div class="flex gap-2 pointer-events-auto">
+                    <button id="t_p2_lean" class="touch-btn text-sky-400 font-black px-3 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        ↖️ P2 WHEELIE
+                    </button>
+                    <button id="t_p2_down" class="touch-btn text-sky-300 font-black px-3 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        ↘️ DOWN
+                    </button>
+                </div>
+                <div class="flex gap-2 pointer-events-auto">
+                    <button id="t_p2_flip" class="touch-btn text-purple-400 font-black px-3 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        🔄 FLIP
+                    </button>
+                    <button id="t_p2_jump" class="touch-btn text-yellow-300 font-black px-3 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        ⏫ JUMP
+                    </button>
+                    <button id="t_p2_gas" class="touch-btn text-green-400 font-black px-4 py-3 rounded-xl text-xs sm:text-sm select-none">
+                        ⛽ P2 GAS
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**************************************************************
+         * 1. GAME CONFIGURATION & 6 BIKE COLOURS
+         **************************************************************/
+        const BIKE_COLORS = [
+            { name: 'Crimson Red', hex: '#ef4444', rim: '#fca5a5' },
+            { name: 'Electric Blue', hex: '#3b82f6', rim: '#93c5fd' },
+            { name: 'Toxic Green', hex: '#22c55e', rim: '#86efac' },
+            { name: 'Safety Orange', hex: '#f97316', rim: '#fdba74' },
+            { name: 'Neon Purple', hex: '#a855f7', rim: '#d8b4fe' },
+            { name: 'Cyber Gold', hex: '#eab308', rim: '#fef08a' }
+        ];
+
+        const DIFFICULTIES = [
+            {
+                name: 'Apprentice',
+                badgeClass: 'bg-green-500 text-gray-950',
+                trackLength: 9500,
+                sweetSpotMin: 18,
+                sweetSpotMax: 58,
+                flipAngle: 78,
+                gravityTorque: 85,
+                wheelieTorque: 145,
+                obstacleSpacing: 330,
+                skyTop: '#1e3a8a',
+                skyBot: '#f59e0b'
+            },
+            {
+                name: 'Foreman',
+                badgeClass: 'bg-amber-500 text-gray-950',
+                trackLength: 13500,
+                sweetSpotMin: 24,
+                sweetSpotMax: 54,
+                flipAngle: 74,
+                gravityTorque: 105,
+                wheelieTorque: 165,
+                obstacleSpacing: 265,
+                skyTop: '#0f172a',
+                skyBot: '#ea580c'
+            },
+            {
+                name: 'Daredevil',
+                badgeClass: 'bg-red-600 text-white',
+                trackLength: 18000,
+                sweetSpotMin: 28,
+                sweetSpotMax: 50,
+                flipAngle: 70,
+                gravityTorque: 125,
+                wheelieTorque: 185,
+                obstacleSpacing: 215,
+                skyTop: '#18181b',
+                skyBot: '#dc2626'
+            }
+        ];
+
+        let numPlayers = 1;
+        let currentDiffIndex = 0;
+        let p1ColorIndex = 0;
+        let p2ColorIndex = 1;
+        let gameActive = false;
+        let soundMuted = false;
+
+        /**************************************************************
+         * 2. SOUND SYNTHESIS (TONE.JS - NO EXTERNAL FILES)
+         **************************************************************/
+        let synth = null;
+        let noiseSynth = null;
+
+        function initAudio() {
+            if (synth) return;
+            try {
+                Tone.start();
+                synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.01, decay: 0.1, sustain: 0.05, release: 0.1 }
+                }).toDestination();
+                synth.volume.value = -8;
+
+                noiseSynth = new Tone.NoiseSynth({
+                    noise: { type: 'brown' },
+                    envelope: { attack: 0.01, decay: 0.15, sustain: 0 }
+                }).toDestination();
+                noiseSynth.volume.value = -10;
+            } catch (e) {
+                console.warn('Audio init skipped:', e);
+            }
+        }
+
+        function playSound(type) {
+            if (soundMuted || !synth) return;
+            try {
+                const now = Tone.now();
+                if (type === 'star') {
+                    synth.triggerAttackRelease(['C5', 'E5', 'G5'], '16n', now);
+                } else if (type === 'box') {
+                    synth.triggerAttackRelease(['G4', 'B4', 'D5', 'G5'], '8n', now);
+                } else if (type === 'jump') {
+                    synth.triggerAttackRelease(['D4', 'A4'], '16n', now);
+                } else if (type === 'flip') {
+                    synth.triggerAttackRelease(['E5', 'A5', 'C6'], '8n', now);
+                } else if (type === 'crash') {
+                    noiseSynth.triggerAttackRelease('8n', now);
+                    synth.triggerAttackRelease(['F2', 'F#2'], '8n', now);
+                } else if (type === 'win') {
+                    synth.triggerAttackRelease(['C4', 'E4', 'G4', 'C5'], '4n', now);
+                }
+            } catch (e) {}
+        }
+
+        function toggleMute() {
+            soundMuted = !soundMuted;
+            document.getElementById('muteBtn').textContent = soundMuted ? '🔇 MUTED' : '🔊 SOUND ON';
+        }
+
+        /**************************************************************
+         * 3. UI & COLOUR PICKER INITIALIZATION
+         **************************************************************/
+        function renderColorPickers() {
+            const p1Container = document.getElementById('p1Colors');
+            const p2Container = document.getElementById('p2Colors');
+            p1Container.innerHTML = '';
+            p2Container.innerHTML = '';
+
+            BIKE_COLORS.forEach((col, idx) => {
+                const btn1 = document.createElement('button');
+                btn1.className = `color-swatch w-8 h-8 rounded-full border-2 border-white/80 ${idx === p1ColorIndex ? 'selected' : ''}`;
+                btn1.style.backgroundColor = col.hex;
+                btn1.title = col.name;
+                btn1.onclick = () => { p1ColorIndex = idx; renderColorPickers(); };
+                p1Container.appendChild(btn1);
+
+                const btn2 = document.createElement('button');
+                btn2.className = `color-swatch w-8 h-8 rounded-full border-2 border-white/80 ${idx === p2ColorIndex ? 'selected' : ''}`;
+                btn2.style.backgroundColor = col.hex;
+                btn2.title = col.name;
+                btn2.onclick = () => { p2ColorIndex = idx; renderColorPickers(); };
+                p2Container.appendChild(btn2);
+            });
+        }
+
+        function setPlayerCount(count) {
+            numPlayers = count;
+            const btn1 = document.getElementById('mode1P');
+            const btn2 = document.getElementById('mode2P');
+            const p2Card = document.getElementById('p2Card');
+
+            if (count === 1) {
+                btn1.className = 'py-2.5 px-4 rounded-lg font-extrabold text-sm border-2 border-amber-500 bg-amber-500 text-gray-900 transition';
+                btn2.className = 'py-2.5 px-4 rounded-lg font-extrabold text-sm border-2 border-gray-600 bg-gray-800 text-gray-300 hover:border-amber-400 transition';
+                p2Card.classList.add('opacity-40', 'pointer-events-none');
+            } else {
+                btn2.className = 'py-2.5 px-4 rounded-lg font-extrabold text-sm border-2 border-sky-400 bg-sky-400 text-gray-950 transition';
+                btn1.className = 'py-2.5 px-4 rounded-lg font-extrabold text-sm border-2 border-gray-600 bg-gray-800 text-gray-300 hover:border-amber-400 transition';
+                p2Card.classList.remove('opacity-40', 'pointer-events-none');
+            }
+        }
+
+        function setDifficulty(idx) {
+            currentDiffIndex = idx;
+            const styles = [
+                'border-green-500 bg-green-500 text-gray-950',
+                'border-amber-500 bg-amber-500 text-gray-950',
+                'border-red-500 bg-red-500 text-white'
+            ];
+            for (let i = 0; i < 3; i++) {
+                const el = document.getElementById('diff' + i);
+                if (i === idx) {
+                    el.className = `py-2.5 px-2 rounded-lg font-extrabold text-xs border-2 transition ${styles[i]}`;
+                } else {
+                    el.className = 'py-2.5 px-2 rounded-lg font-extrabold text-xs border-2 border-gray-600 bg-gray-800 text-gray-300 transition';
+                }
+            }
+        }
+
+        function showSetup() {
+            gameActive = false;
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.remove('flex');
+            document.getElementById('setupScreen').classList.remove('hidden');
+        }
+
+        /**************************************************************
+         * 4. INPUT HANDLING (KEYBOARD WASD + ARROWS + TOUCH)
+         **************************************************************/
+        const keys = {
+            p1Gas: false, p1Lean: false, p1Down: false, p1Jump: false, p1Flip: false,
+            p2Gas: false, p2Lean: false, p2Down: false, p2Jump: false, p2Flip: false
+        };
+
+        window.addEventListener('keydown', (e) => {
+            if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+            const code = e.code;
+            // Player 1 (WASD + Spacebar for Flip)
+            if (code === 'KeyD') keys.p1Gas = true;
+            if (code === 'KeyA') keys.p1Lean = true;
+            if (code === 'KeyS') keys.p1Down = true;
+            if (code === 'KeyW') keys.p1Jump = true;
+            if (code === 'Space') { keys.p1Flip = true; e.preventDefault(); }
+
+            // Player 2 (Arrows + 0 for Flip)
+            if (code === 'ArrowRight') { keys.p2Gas = true; e.preventDefault(); }
+            if (code === 'ArrowLeft')  { keys.p2Lean = true; e.preventDefault(); }
+            if (code === 'ArrowDown')  { keys.p2Down = true; e.preventDefault(); }
+            if (code === 'ArrowUp')    { keys.p2Jump = true; e.preventDefault(); }
+            if (code === 'Digit0' || code === 'Numpad0') { keys.p2Flip = true; e.preventDefault(); }
+
+            // In 1-player mode, let Arrow keys & 0 also control Player 1 for convenience
+            if (numPlayers === 1) {
+                if (code === 'ArrowRight') keys.p1Gas = true;
+                if (code === 'ArrowLeft')  keys.p1Lean = true;
+                if (code === 'ArrowDown')  keys.p1Down = true;
+                if (code === 'ArrowUp')    keys.p1Jump = true;
+                if (code === 'Digit0' || code === 'Numpad0') keys.p1Flip = true;
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const code = e.code;
+            if (code === 'KeyD') keys.p1Gas = false;
+            if (code === 'KeyA') keys.p1Lean = false;
+            if (code === 'KeyS') keys.p1Down = false;
+            if (code === 'KeyW') keys.p1Jump = false;
+            if (code === 'Space') keys.p1Flip = false;
+
+            if (code === 'ArrowRight') keys.p2Gas = false;
+            if (code === 'ArrowLeft')  keys.p2Lean = false;
+            if (code === 'ArrowDown')  keys.p2Down = false;
+            if (code === 'ArrowUp')    keys.p2Jump = false;
+            if (code === 'Digit0' || code === 'Numpad0') keys.p2Flip = false;
+
+            if (numPlayers === 1) {
+                if (code === 'ArrowRight') keys.p1Gas = false;
+                if (code === 'ArrowLeft')  keys.p1Lean = false;
+                if (code === 'ArrowDown')  keys.p1Down = false;
+                if (code === 'ArrowUp')    keys.p1Jump = false;
+                if (code === 'Digit0' || code === 'Numpad0') keys.p1Flip = false;
+            }
+        });
+
+        function bindTouchButton(id, keyProp) {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+            const start = (e) => { e.preventDefault(); keys[keyProp] = true; };
+            const end = (e) => { e.preventDefault(); keys[keyProp] = false; };
+            btn.addEventListener('touchstart', start, { passive: false });
+            btn.addEventListener('touchend', end, { passive: false });
+            btn.addEventListener('touchcancel', end, { passive: false });
+            btn.addEventListener('mousedown', start);
+            btn.addEventListener('mouseup', end);
+            btn.addEventListener('mouseleave', end);
+        }
+
+        bindTouchButton('t_p1_lean', 'p1Lean');
+        bindTouchButton('t_p1_down', 'p1Down');
+        bindTouchButton('t_p1_jump', 'p1Jump');
+        bindTouchButton('t_p1_flip', 'p1Flip');
+        bindTouchButton('t_p1_gas',  'p1Gas');
+
+        bindTouchButton('t_p2_lean', 'p2Lean');
+        bindTouchButton('t_p2_down', 'p2Down');
+        bindTouchButton('t_p2_jump', 'p2Jump');
+        bindTouchButton('t_p2_flip', 'p2Flip');
+        bindTouchButton('t_p2_gas',  'p2Gas');
+
+        /**************************************************************
+         * 5. TRACK, OBSTACLES & MARIO-KART ITEM GENERATION
+         **************************************************************/
+        let trackObjects = [];
+        let trackCollectibles = [];
+        let bgCranes = [];
+
+        function generateConstructionTrack(diff) {
+            trackObjects = [];
+            trackCollectibles = [];
+            bgCranes = [];
+
+            // Generate background cranes & buildings with randomized dimensions
+            for (let x = 150; x < diff.trackLength + 800; x += 340 + Math.floor(Math.random() * 120)) {
+                bgCranes.push({
+                    x: x,
+                    height: 120 + Math.floor(Math.random() * 110),
+                    armLength: 90 + Math.floor(Math.random() * 80),
+                    buildingW: 100 + Math.floor(Math.random() * 90),
+                    buildingH: 75 + Math.floor(Math.random() * 100)
+                });
+            }
+
+            // Generate truly randomized Ramps, Cones, Barricades, Mud Pits, Stars & Mystery Boxes
+            let cursor = 420;
+            while (cursor < diff.trackLength - 450) {
+                const roll = Math.random();
+                const spacingJitter = (Math.random() * 0.45 + 0.8) * diff.obstacleSpacing;
+
+                if (roll < 0.30) {
+                    // Wooden / Steel Jump Ramp with random size
+                    const w = 105 + Math.floor(Math.random() * 45);
+                    const h = 42 + Math.floor(Math.random() * 24);
+                    trackObjects.push({ type: 'ramp', x: cursor, w: w, h: h });
+
+                    // Randomize reward pattern above the ramp
+                    const rewardPattern = Math.random();
+                    if (rewardPattern < 0.5) {
+                        const starCount = 3 + Math.floor(Math.random() * 3);
+                        for (let i = 0; i < starCount; i++) {
+                            trackCollectibles.push({
+                                type: 'star',
+                                x: cursor + 40 + i * 38,
+                                yOffset: 70 + Math.sin((i / (starCount - 1)) * Math.PI) * 45,
+                                collectedBy: {}
+                            });
+                        }
+                    } else {
+                        // High-air Mystery Box + Stars
+                        trackCollectibles.push({
+                            type: 'mystery',
+                            x: cursor + w + 45,
+                            yOffset: 105 + Math.floor(Math.random() * 25),
+                            collectedBy: {}
+                        });
+                        trackCollectibles.push({
+                            type: 'star',
+                            x: cursor + w + 95,
+                            yOffset: 90,
+                            collectedBy: {}
+                        });
+                    }
+                    cursor += w + spacingJitter;
+                } else if (roll < 0.55) {
+                    // Traffic Cones with randomized Mystery Box or Star clusters
+                    trackObjects.push({ type: 'cone', x: cursor, w: 36, h: 36 });
+                    if (Math.random() < 0.75) {
+                        trackCollectibles.push({
+                            type: 'mystery',
+                            x: cursor - 60 - Math.floor(Math.random() * 40),
+                            yOffset: 50 + Math.floor(Math.random() * 35),
+                            collectedBy: {}
+                        });
+                    }
+                    if (Math.random() < 0.5) {
+                        trackCollectibles.push({
+                            type: 'star',
+                            x: cursor + 18,
+                            yOffset: 80 + Math.floor(Math.random() * 25),
+                            collectedBy: {}
+                        });
+                    }
+                    cursor += spacingJitter;
+                } else if (roll < 0.80) {
+                    // Hazard Barricade with floating stars or double mystery boxes
+                    trackObjects.push({ type: 'barricade', x: cursor, w: 48, h: 42 });
+                    const topChoice = Math.random();
+                    if (topChoice < 0.6) {
+                        trackCollectibles.push({
+                            type: 'star',
+                            x: cursor + 24,
+                            yOffset: 90 + Math.floor(Math.random() * 25),
+                            collectedBy: {}
+                        });
+                    } else {
+                        trackCollectibles.push({
+                            type: 'mystery',
+                            x: cursor + 24,
+                            yOffset: 98,
+                            collectedBy: {}
+                        });
+                    }
+                    cursor += spacingJitter;
+                } else {
+                    // Construction Mud Pit + Overhead Rainbow Box & bonus stars
+                    const mudW = 115 + Math.floor(Math.random() * 50);
+                    trackObjects.push({ type: 'mud', x: cursor, w: mudW, h: 12 });
+                    trackCollectibles.push({
+                        type: 'mystery',
+                        x: cursor + mudW * 0.5,
+                        yOffset: 75 + Math.floor(Math.random() * 30),
+                        collectedBy: {}
+                    });
+                    if (Math.random() < 0.6) {
+                        trackCollectibles.push({
+                            type: 'star',
+                            x: cursor + mudW + 40,
+                            yOffset: 55,
+                            collectedBy: {}
+                        });
+                    }
+                    cursor += mudW + spacingJitter;
+                }
+            }
+        }
+
+        /**************************************************************
+         * 6. PLAYER STATE & PHYSICS ENGINE
+         **************************************************************/
+        let players = [];
+
+        function createPlayer(id, name, colorObj) {
+            return {
+                id: id,
+                name: name || `Rider ${id}`,
+                color: colorObj,
+                x: 100,
+                y: 0,           // Height above ground
+                vx: 0,
+                vy: 0,
+                angle: 0,       // Wheelie angle in degrees (0 = flat, 40 = sweet spot, 75 = flip)
+                angVel: 0,
+                isFlipping: false,
+                flipProgress: 0,
+                flipsCount: 0,
+                score: 0,
+                wheelieBonus: 0,
+                bestWheelieSec: 0,
+                curWheelieSec: 0,
+                starsCollected: 0,
+                crashedTimer: 0,
+                finished: false,
+                finishTime: 0,
+                // Mario Kart style active power-up
+                powerupType: null, // 'STAR', 'TURBO', '2X'
+                powerupTimer: 0,
+                statusText: '',
+                statusTimer: 0,
+                particles: [],
+                floatingTexts: []
+            };
+        }
+
+        function addFloatingText(p, text, color) {
+            p.floatingTexts.push({
+                text: text,
+                x: p.x,
+                y: p.y + 65,
+                color: color || '#fde047',
+                life: 1.0
+            });
+        }
+
+        function spawnParticles(p, count, color, speedScale = 1) {
+            for (let i = 0; i < count; i++) {
+                p.particles.push({
+                    x: p.x - 18,
+                    y: p.y + 5,
+                    vx: (-40 - Math.random() * 80) * speedScale,
+                    vy: (20 + Math.random() * 60) * speedScale,
+                    size: 3 + Math.random() * 4,
+                    color: color,
+                    life: 0.4 + Math.random() * 0.4
+                });
+            }
+        }
+
+        function updatePlayerPhysics(p, dt, ctrl, diff) {
+            if (p.finished) {
+                p.vx *= 0.95;
+                p.x += p.vx * dt;
+                p.angle *= 0.9;
+                return;
+            }
+
+            // Update timers
+            if (p.powerupTimer > 0) {
+                p.powerupTimer -= dt;
+                if (p.powerupTimer <= 0) p.powerupType = null;
+            }
+            if (p.statusTimer > 0) p.statusTimer -= dt;
+
+            // Crash recovery state
+            if (p.crashedTimer > 0) {
+                p.crashedTimer -= dt;
+                p.vx *= 0.9;
+                p.x += p.vx * dt;
+                p.angle *= 0.85;
+                p.isFlipping = false;
+                p.flipProgress = 0;
+                p.curWheelieSec = 0;
+                return;
+            }
+
+            const isStarPower = p.powerupType === 'STAR';
+            const isTurbo = p.powerupType === 'TURBO';
+            const isMoonGrav = p.powerupType === 'MOON';
+            const isMagnet = p.powerupType === 'MAGNET';
+            const mult = p.powerupType === '3X' ? 3 : (p.powerupType === '2X' ? 2 : 1);
+
+            // 1. Horizontal Acceleration
+            const baseMaxSpeed = 330;
+            const maxSpeed = isTurbo ? 510 : (isStarPower ? 440 : baseMaxSpeed);
+            if (ctrl.gas || isTurbo) {
+                p.vx += (isTurbo ? 420 : 260) * dt;
+                if (Math.random() < 0.35) {
+                    spawnParticles(p, 1, isTurbo ? '#38bdf8' : '#a8a29e', 0.8);
+                }
+            } else {
+                p.vx -= 140 * dt;
+            }
+            p.vx = Math.max(0, Math.min(maxSpeed, p.vx));
+
+            // 2. Jump Input
+            if (ctrl.jump && p.y <= 1) {
+                p.vy = 330;
+                playSound('jump');
+                spawnParticles(p, 6, '#f59e0b', 1.1);
+            }
+
+            // 2b. 360° Flip Input (Spacebar for P1, 0 for P2)
+            if (ctrl.flip && !p.isFlipping) {
+                // If on the ground, pop the bike up into the air to execute the backflip!
+                if (p.y <= 12) {
+                    p.vy = Math.max(p.vy, 380);
+                } else {
+                    p.vy = Math.max(p.vy, 160);
+                }
+                p.isFlipping = true;
+                p.flipProgress = 0;
+                playSound('flip');
+                spawnParticles(p, 12, '#c084fc', 1.4);
+            }
+
+            if (p.isFlipping) {
+                p.flipProgress += 760 * dt; // Fast 360-degree backflip spin
+                if (Math.random() < 0.65) {
+                    spawnParticles(p, 1, '#e879f9', 1.1);
+                }
+                if (p.flipProgress >= 360) {
+                    p.isFlipping = false;
+                    p.flipProgress = 0;
+                    p.flipsCount++;
+                    playSound('flip');
+                    addFloatingText(p, '🔄 360° STYLISH FLIP!', '#e879f9');
+                }
+            }
+
+            // 3. Wheelie Angular Physics
+            if (!p.isFlipping) {
+                if (ctrl.lean && p.vx > 40) {
+                    p.angVel += diff.wheelieTorque * dt;
+                    // Flame sparks when pulling hard wheelie
+                    if (p.angle > diff.sweetSpotMin && Math.random() < 0.4) {
+                        spawnParticles(p, 1, '#f97316', 1.0);
+                    }
+                }
+                if (ctrl.down) {
+                    p.angVel -= diff.wheelieTorque * 1.25 * dt;
+                }
+
+                // Natural gravity pulls front wheel down, unless past balance point where it tips back faster
+                if (p.angle > 0) {
+                    if (p.angle < 52) {
+                        p.angVel -= diff.gravityTorque * dt;
+                    } else {
+                        // Past high balance point: tips backward more easily!
+                        p.angVel += (p.angle - 50) * 1.9 * dt;
+                    }
+                }
+
+                p.angVel *= 0.92; // Angular damping
+                p.angle += p.angVel * dt;
+
+                if (p.angle < 0) {
+                    p.angle = 0;
+                    p.angVel = 0;
+                }
+
+                // Check Flip-Over Backwards Crash!
+                if (p.angle >= diff.flipAngle) {
+                    if (isStarPower) {
+                        // Star power saves you from flipping!
+                        p.angle = diff.sweetSpotMax;
+                        p.angVel = -20;
+                    } else {
+                        p.crashedTimer = 1.15;
+                        p.vx = 40;
+                        p.angle = 0;
+                        p.angVel = 0;
+                        playSound('crash');
+                        p.statusText = '💥 LOOPED OUT! TOO FAR BACK!';
+                        p.statusTimer = 1.5;
+                        spawnParticles(p, 15, '#ef4444', 1.5);
+                        return;
+                    }
+                }
+            }
+
+            // 4. Vertical Gravity & Position Update
+            const gravityAccel = isMoonGrav ? 460 : 850;
+            p.vy -= gravityAccel * dt;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+
+            // 5. Track Obstacles & Ramps Collision
+            let onRampSurface = false;
+            for (const obj of trackObjects) {
+                if (p.x + 22 > obj.x && p.x - 18 < obj.x + obj.w) {
+                    if (obj.type === 'ramp') {
+                        const progress = Math.max(0, Math.min(1, (p.x - obj.x) / obj.w));
+                        const rampHeight = progress * obj.h;
+                        if (p.y <= rampHeight + 10 && p.vy <= 80) {
+                            p.y = rampHeight;
+                            onRampSurface = true;
+                            if (progress > 0.85 && p.vx > 120) {
+                                p.vy = p.vx * 0.92;
+                                playSound('jump');
+                                addFloatingText(p, '🚀 BIG AIR!', '#38bdf8');
+                            } else {
+                                p.vy = 0;
+                            }
+                        }
+                    } else if (obj.type === 'mud') {
+                        if (p.y <= 8 && !isStarPower && !isTurbo) {
+                            p.vx *= 0.92;
+                            if (Math.random() < 0.3) {
+                                spawnParticles(p, 1, '#78350f', 0.6);
+                            }
+                        }
+                    } else if (obj.type === 'cone' || obj.type === 'barricade') {
+                        if (p.y < obj.h - 6) {
+                            if (isStarPower) {
+                                const pts = 100 * mult;
+                                p.score += pts;
+                                addFloatingText(p, `💥 SMASH +${pts}`, '#fde047');
+                                spawnParticles(p, 8, '#f59e0b', 1.4);
+                                obj.x = -9999;
+                            } else {
+                                p.crashedTimer = 1.0;
+                                p.vx = 30;
+                                p.angle = 0;
+                                p.angVel = 0;
+                                playSound('crash');
+                                p.statusText = '🚧 HIT BARRICADE! JUMP NEXT TIME!';
+                                p.statusTimer = 1.4;
+                                spawnParticles(p, 12, '#f97316', 1.3);
+                                obj.x = -9999;
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!onRampSurface && p.y <= 0) {
+                p.y = 0;
+                p.vy = 0;
+            }
+
+            // 6. Check Collectibles (Stars & Mario Kart Mystery Boxes)
+            for (const item of trackCollectibles) {
+                if (item.collectedBy[p.id]) continue;
+
+                // Star Magnet pulls nearby stars and mystery boxes right toward the rider!
+                if (isMagnet) {
+                    const distX = p.x - item.x;
+                    const distY = (p.y + 28) - item.yOffset;
+                    if (Math.abs(distX) < 220 && Math.abs(distY) < 160) {
+                        item.x += distX * 6 * dt;
+                        item.yOffset += distY * 6 * dt;
+                    }
+                }
+
+                const dx = p.x - item.x;
+                const dy = (p.y + 28) - item.yOffset;
+                if (Math.abs(dx) < 36 && Math.abs(dy) < 40) {
+                    item.collectedBy[p.id] = true;
+                    if (item.type === 'star') {
+                        // Randomized star value between 125 and 250!
+                        const baseStar = 125 + Math.floor(Math.random() * 6) * 25;
+                        const pts = baseStar * mult;
+                        p.score += pts;
+                        p.starsCollected++;
+                        playSound('star');
+                        addFloatingText(p, `⭐ STAR +${pts}`, '#fde047');
+                        spawnParticles(p, 8, '#fde047', 1.2);
+                    } else if (item.type === 'mystery') {
+                        playSound('box');
+                        // 7 Randomized Mario Kart-style Rewards!
+                        const rewards = ['STAR', 'TURBO', '2X', '3X', 'MAGNET', 'MOON', 'JACKPOT'];
+                        const chosen = rewards[Math.floor(Math.random() * rewards.length)];
+                        const randomDuration = 4.5 + Math.random() * 3.0;
+
+                        if (chosen === 'JACKPOT') {
+                            const jackpotPts = (400 + Math.floor(Math.random() * 7) * 100) * mult;
+                            p.score += jackpotPts;
+                            p.statusText = `💰 MYSTERY JACKPOT! +${jackpotPts} PTS!`;
+                            addFloatingText(p, `💰 JACKPOT +${jackpotPts}!`, '#4ade80');
+                        } else {
+                            p.powerupType = chosen;
+                            p.powerupTimer = randomDuration;
+                            if (chosen === 'STAR') {
+                                p.statusText = '🌟 SUPER STAR POWER! INVINCIBLE!';
+                                addFloatingText(p, '🌟 STAR POWER!', '#fde047');
+                            } else if (chosen === 'TURBO') {
+                                p.statusText = '🍄 GOLDEN MUSHROOM TURBO!';
+                                addFloatingText(p, '🍄 TURBO BOOST!', '#38bdf8');
+                            } else if (chosen === '2X') {
+                                p.statusText = '⚡ 2X DOUBLE POINTS ACTIVE!';
+                                addFloatingText(p, '⚡ 2X POINTS!', '#c084fc');
+                            } else if (chosen === '3X') {
+                                p.statusText = '🔥 3X TRIPLE FRENZY ACTIVE!';
+                                addFloatingText(p, '🔥 3X POINTS!', '#f43f5e');
+                            } else if (chosen === 'MAGNET') {
+                                p.statusText = '🧲 STAR MAGNET! PULLING LOOT!';
+                                addFloatingText(p, '🧲 STAR MAGNET!', '#38bdf8');
+                            } else if (chosen === 'MOON') {
+                                p.vy = Math.max(p.vy, 320);
+                                p.statusText = '🚀 MOON GRAVITY! HUGE AIRTIME!';
+                                addFloatingText(p, '🚀 MOON GRAVITY!', '#a78bfa');
+                            }
+                        }
+                        p.statusTimer = 2.4;
+                        spawnParticles(p, 16, '#c084fc', 1.6);
+                    }
+                }
+            }
+
+            // 7. Wheelie Scoring Calculation
+            if (p.vx > 60 && p.angle >= diff.sweetSpotMin && p.angle <= diff.sweetSpotMax) {
+                p.curWheelieSec += dt;
+                if (p.curWheelieSec > p.bestWheelieSec) {
+                    p.bestWheelieSec = p.curWheelieSec;
+                }
+                const comboMultiplier = 1 + Math.floor(p.curWheelieSec / 1.5) * 0.5;
+                const pts = 110 * dt * comboMultiplier * mult;
+                p.score += pts;
+                p.wheelieBonus += pts;
+            } else if (p.angle < 10) {
+                p.curWheelieSec = 0;
+            }
+
+            // 8. Update Particles & Floating Text
+            for (let i = p.particles.length - 1; i >= 0; i--) {
+                const pt = p.particles[i];
+                pt.x += pt.vx * dt;
+                pt.y += pt.vy * dt;
+                pt.life -= dt;
+                if (pt.life <= 0) p.particles.splice(i, 1);
+            }
+            for (let i = p.floatingTexts.length - 1; i >= 0; i--) {
+                const ft = p.floatingTexts[i];
+                ft.y += 35 * dt;
+                ft.life -= dt;
+                if (ft.life <= 0) p.floatingTexts.splice(i, 1);
+            }
+
+            // 9. Check Finish Line
+            if (p.x >= diff.trackLength) {
+                p.finished = true;
+                p.score += 500;
+                playSound('win');
+                addFloatingText(p, '🏁 FINISHED! +500', '#4ade80');
+                checkRaceEnd();
+            }
+        }
+
+        /**************************************************************
+         * 7. RENDERING ENGINE (CONSTRUCTION SITE, BIKE, HUD)
+         **************************************************************/
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function drawViewport(p, vx, vy, vw, vh, diff, timeSec) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(vx, vy, vw, vh);
+            ctx.clip();
+
+            const groundY = vy + vh * 0.77;
+            const camX = p.x - vw * 0.24;
+
+            // 1. Sky Gradient
+            const skyGrad = ctx.createLinearGradient(0, vy, 0, groundY);
+            skyGrad.addColorStop(0, diff.skyTop);
+            skyGrad.addColorStop(1, diff.skyBot);
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(vx, vy, vw, groundY - vy);
+
+            // 2. Parallax Construction Cranes & Steel Girders
+            ctx.save();
+            const parallaxCam = camX * 0.35;
+            for (const c of bgCranes) {
+                const sx = vx + (c.x - parallaxCam);
+                if (sx < vx - 250 || sx > vx + vw + 250) continue;
+
+                // Silhouette Building under construction
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.55)';
+                ctx.fillRect(sx - 40, groundY - c.buildingH, c.buildingW, c.buildingH);
+
+                // Tower Crane Mast
+                ctx.strokeStyle = 'rgba(245, 158, 11, 0.45)';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(sx, groundY - c.height, 14, c.height);
+
+                // Crane Horizontal Jib Arm
+                ctx.beginPath();
+                ctx.moveTo(sx - 25, groundY - c.height);
+                ctx.lineTo(sx + c.armLength, groundY - c.height);
+                ctx.stroke();
+
+                // Hanging Hook Cable
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(sx + c.armLength - 20, groundY - c.height);
+                ctx.lineTo(sx + c.armLength - 20, groundY - c.height + 40);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // 3. Dirt Ground & Caution Fence
+            ctx.fillStyle = '#451a03';
+            ctx.fillRect(vx, groundY, vw, vh - (groundY - vy));
+            ctx.fillStyle = '#78350f';
+            ctx.fillRect(vx, groundY, vw, 14);
+
+            // Hazard Stripe Fence Along Track
+            const stripeOffset = -(camX % 40);
+            for (let sx = vx + stripeOffset - 40; sx < vx + vw + 40; sx += 40) {
+                ctx.fillStyle = '#f59e0b';
+                ctx.fillRect(sx, groundY - 8, 20, 8);
+                ctx.fillStyle = '#1f2937';
+                ctx.fillRect(sx + 20, groundY - 8, 20, 8);
+            }
+
+            // 4. Draw Track Obstacles (Ramps, Cones, Barricades, Mud)
+            for (const obj of trackObjects) {
+                const sx = vx + (obj.x - camX);
+                if (sx + obj.w < vx - 50 || sx > vx + vw + 50) continue;
+
+                if (obj.type === 'ramp') {
+                    ctx.fillStyle = '#d97706';
+                    ctx.beginPath();
+                    ctx.moveTo(sx, groundY);
+                    ctx.lineTo(sx + obj.w, groundY - obj.h);
+                    ctx.lineTo(sx + obj.w, groundY);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.strokeStyle = '#fef08a';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                } else if (obj.type === 'mud') {
+                    ctx.fillStyle = '#3f200b';
+                    ctx.beginPath();
+                    ctx.ellipse(sx + obj.w / 2, groundY + 3, obj.w / 2, 9, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (obj.type === 'cone') {
+                    ctx.fillStyle = '#f97316';
+                    ctx.beginPath();
+                    ctx.moveTo(sx + 4, groundY);
+                    ctx.lineTo(sx + obj.w / 2, groundY - obj.h);
+                    ctx.lineTo(sx + obj.w - 4, groundY);
+                    ctx.closePath();
+                    ctx.fill();
+                    // White reflective band
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(sx + 11, groundY - obj.h * 0.55, obj.w - 22, 6);
+                } else if (obj.type === 'barricade') {
+                    // Steel legs
+                    ctx.fillStyle = '#374151';
+                    ctx.fillRect(sx + 6, groundY - obj.h, 6, obj.h);
+                    ctx.fillRect(sx + obj.w - 12, groundY - obj.h, 6, obj.h);
+                    // Striped board
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.fillRect(sx, groundY - obj.h + 4, obj.w, 18);
+                    ctx.fillStyle = '#111827';
+                    ctx.fillRect(sx + 10, groundY - obj.h + 4, 10, 18);
+                    ctx.fillRect(sx + 30, groundY - obj.h + 4, 10, 18);
+                }
+            }
+
+            // 5. Draw Collectibles (Stars & Mario Kart Mystery Boxes)
+            for (const item of trackCollectibles) {
+                if (item.collectedBy[p.id]) continue;
+                const sx = vx + (item.x - camX);
+                if (sx < vx - 50 || sx > vx + vw + 50) continue;
+                const bob = Math.sin(timeSec * 5 + item.x) * 5;
+                const sy = groundY - item.yOffset + bob;
+
+                if (item.type === 'star') {
+                    drawStarShape(ctx, sx, sy, 5, 15, 7, '#fde047', '#f59e0b');
+                } else if (item.type === 'mystery') {
+                    // Rainbow Mario Kart style Mystery Box
+                    const hue = (timeSec * 120 + item.x) % 360;
+                    ctx.save();
+                    ctx.translate(sx, sy);
+                    ctx.rotate(Math.sin(timeSec * 3) * 0.15);
+                    ctx.fillStyle = `hsl(${hue}, 90%, 55%)`;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2.5;
+                    ctx.fillRect(-15, -15, 30, 30);
+                    ctx.strokeRect(-15, -15, 30, 30);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = '900 18px Inter';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('?', 0, 1);
+                    ctx.restore();
+                }
+            }
+
+            // 6. Finish Line Banner
+            const finishScreenX = vx + (diff.trackLength - camX);
+            if (finishScreenX > vx - 100 && finishScreenX < vx + vw + 100) {
+                ctx.fillStyle = '#e5e7eb';
+                ctx.fillRect(finishScreenX, groundY - 130, 8, 130);
+                // Checkered Flag Banner
+                for (let r = 0; r < 3; r++) {
+                    for (let c = 0; c < 6; c++) {
+                        ctx.fillStyle = (r + c) % 2 === 0 ? '#ffffff' : '#111827';
+                        ctx.fillRect(finishScreenX - 30 + c * 12, groundY - 130 + r * 12, 12, 12);
+                    }
+                }
+            }
+
+            // 7. Draw Particles & Floating Texts
+            for (const pt of p.particles) {
+                const px = vx + (pt.x - camX);
+                const py = groundY - pt.y;
+                ctx.fillStyle = pt.color;
+                ctx.beginPath();
+                ctx.arc(px, py, pt.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            for (const ft of p.floatingTexts) {
+                const fx = vx + (ft.x - camX);
+                const fy = groundY - ft.y;
+                ctx.font = '900 14px Inter';
+                ctx.fillStyle = ft.color;
+                ctx.textAlign = 'center';
+                ctx.fillText(ft.text, fx, fy);
+            }
+
+            // 8. Draw Motorbike & Rider
+            const bikeScreenX = vx + (p.x - camX);
+            const bikeScreenY = groundY - p.y;
+            drawMotorbike(ctx, p, bikeScreenX, bikeScreenY, timeSec);
+
+            // 9. Draw HUD (Score, Wheelie Sweet-Spot Gauge, Track Progress)
+            drawPlayerHUD(ctx, p, vx, vy, vw, vh, diff);
+
+            ctx.restore();
+        }
+
+        function drawStarShape(ctx, cx, cy, spikes, outerR, innerR, fill, stroke) {
+            let rot = Math.PI / 2 * 3;
+            let x = cx;
+            let y = cy;
+            const step = Math.PI / spikes;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerR);
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outerR;
+                y = cy + Math.sin(rot) * outerR;
+                ctx.lineTo(x, y);
+                rot += step;
+                x = cx + Math.cos(rot) * innerR;
+                y = cy + Math.sin(rot) * innerR;
+                ctx.lineTo(x, y);
+                rot += step;
+            }
+            ctx.lineTo(cx, cy - outerR);
+            ctx.closePath();
+            ctx.fillStyle = fill;
+            ctx.fill();
+            ctx.strokeStyle = stroke;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function drawMotorbike(ctx, p, sx, sy, timeSec) {
+            ctx.save();
+            // Pivot around the rear wheel contact point for realistic wheelies, or center of bike when mid-air flipping!
+            const wheelRadius = 15;
+            const rearWheelX = sx - 20;
+            const rearWheelY = sy - wheelRadius;
+
+            ctx.translate(rearWheelX, rearWheelY);
+            if (p.isFlipping) {
+                ctx.translate(23, -18);
+                ctx.rotate((-(p.angle + p.flipProgress) * Math.PI) / 180);
+                ctx.translate(-23, 18);
+            } else {
+                ctx.rotate((-p.angle * Math.PI) / 180);
+            }
+
+            // Rainbow aura if Star Power is active
+            if (p.powerupType === 'STAR') {
+                const hue = (timeSec * 360) % 360;
+                ctx.shadowColor = `hsl(${hue}, 100%, 60%)`;
+                ctx.shadowBlur = 20;
+            }
+
+            const bikeHex = p.powerupType === 'STAR'
+                ? `hsl(${(timeSec * 300) % 360}, 95%, 55%)`
+                : p.color.hex;
+
+            // Rear & Front Tires
+            ctx.fillStyle = '#111827';
+            ctx.strokeStyle = '#374151';
+            ctx.lineWidth = 4;
+
+            // Rear Wheel (at 0,0)
+            ctx.beginPath();
+            ctx.arc(0, 0, wheelRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = p.color.rim;
+            ctx.beginPath();
+            ctx.arc(0, 0, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Front Wheel (at +46, 0)
+            ctx.fillStyle = '#111827';
+            ctx.beginPath();
+            ctx.arc(46, 0, wheelRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = p.color.rim;
+            ctx.beginPath();
+            ctx.arc(46, 0, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Exhaust Pipe
+            ctx.strokeStyle = '#9ca3af';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(-14, -6);
+            ctx.lineTo(14, -4);
+            ctx.stroke();
+
+            // Front Forks
+            ctx.strokeStyle = '#d1d5db';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(46, 0);
+            ctx.lineTo(32, -28);
+            ctx.stroke();
+
+            // Main Bike Frame / Bodywork
+            ctx.fillStyle = bikeHex;
+            ctx.beginPath();
+            ctx.moveTo(-8, -14);
+            ctx.lineTo(16, -26);
+            ctx.lineTo(36, -24);
+            ctx.lineTo(26, -8);
+            ctx.closePath();
+            ctx.fill();
+
+            // Rider Legs & Torso
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(8, -12);
+            ctx.lineTo(14, -24);
+            ctx.lineTo(6, -38);
+            ctx.stroke();
+
+            // Rider Hi-Vis Construction Vest
+            ctx.fillStyle = bikeHex;
+            ctx.fillRect(2, -40, 11, 15);
+
+            // Rider Arms reaching to Handlebars
+            ctx.strokeStyle = '#f8fafc';
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            ctx.moveTo(10, -37);
+            ctx.lineTo(30, -28);
+            ctx.stroke();
+
+            // Rider Helmet + Hardhat Visor
+            ctx.fillStyle = '#fbbf24';
+            ctx.beginPath();
+            ctx.arc(10, -46, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(12, -49, 6, 5);
+
+            // Crash Stars if recovering
+            if (p.crashedTimer > 0) {
+                ctx.fillStyle = '#fde047';
+                ctx.font = 'bold 14px Inter';
+                ctx.fillText('💫 CRASH!', -10, -60);
+            }
+
+            ctx.restore();
+        }
+
+        function drawPlayerHUD(ctx, p, vx, vy, vw, vh, diff) {
+            // Top Left Player Card
+            ctx.fillStyle = 'rgba(17, 24, 39, 0.82)';
+            ctx.fillRect(vx + 12, vy + 10, 215, 64);
+            ctx.strokeStyle = p.color.hex;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(vx + 12, vy + 10, 215, 64);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 15px Inter';
+            ctx.textAlign = 'left';
+            ctx.fillText(`${p.name.toUpperCase()}`, vx + 22, vy + 30);
+
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = '800 14px Inter';
+            ctx.fillText(`SCORE: ${Math.floor(p.score)}`, vx + 22, vy + 49);
+
+            ctx.fillStyle = '#fde047';
+            ctx.font = '700 12px Inter';
+            ctx.fillText(`⭐ ${p.starsCollected}   🔄 Flips: ${p.flipsCount}   ⏱️ ${p.bestWheelieSec.toFixed(1)}s`, vx + 22, vy + 66);
+
+            // Active Mario-Kart Powerup Badge
+            if (p.powerupType) {
+                ctx.fillStyle = 'rgba(88, 28, 135, 0.9)';
+                ctx.fillRect(vx + 236, vy + 10, 145, 42);
+                ctx.strokeStyle = '#fde047';
+                ctx.strokeRect(vx + 236, vy + 10, 145, 42);
+                ctx.fillStyle = '#fde047';
+                ctx.font = '900 12px Inter';
+                ctx.fillText(`ITEM: ${p.powerupType}`, vx + 246, vy + 28);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(`${p.powerupTimer.toFixed(1)}s left`, vx + 246, vy + 44);
+            }
+
+            // Center Wheelie Balance Meter
+            const meterW = 180;
+            const meterH = 16;
+            const mx = vx + vw / 2 - meterW / 2;
+            const my = vy + 14;
+
+            ctx.fillStyle = 'rgba(17, 24, 39, 0.85)';
+            ctx.fillRect(mx - 6, my - 6, meterW + 12, meterH + 26);
+
+            // Grey low zone
+            ctx.fillStyle = '#4b5563';
+            ctx.fillRect(mx, my, meterW, meterH);
+
+            // Green Sweet Spot zone
+            const sweetStart = (diff.sweetSpotMin / diff.flipAngle) * meterW;
+            const sweetWidth = ((diff.sweetSpotMax - diff.sweetSpotMin) / diff.flipAngle) * meterW;
+            ctx.fillStyle = '#22c55e';
+            ctx.fillRect(mx + sweetStart, my, sweetWidth, meterH);
+
+            // Red Danger Flip zone
+            const dangerStart = (diff.sweetSpotMax / diff.flipAngle) * meterW;
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(mx + dangerStart, my, meterW - dangerStart, meterH);
+
+            // Current Angle Marker
+            const clampedAngle = Math.max(0, Math.min(diff.flipAngle, p.angle));
+            const markerX = mx + (clampedAngle / diff.flipAngle) * meterW;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(markerX - 3, my - 3, 6, meterH + 6);
+
+            // Label under meter
+            ctx.font = '800 11px Inter';
+            ctx.textAlign = 'center';
+            const inSweetSpot = p.angle >= diff.sweetSpotMin && p.angle <= diff.sweetSpotMax && p.vx > 60;
+            ctx.fillStyle = inSweetSpot ? '#4ade80' : '#d1d5db';
+            ctx.fillText(
+                inSweetSpot ? `🔥 SWEET SPOT WHEELIE! (${p.curWheelieSec.toFixed(1)}s)` : 'WHEELIE BALANCE METER',
+                vx + vw / 2,
+                my + meterH + 14
+            );
+
+            // Track Progress Bar (Top Right)
+            const progW = 140;
+            const px = vx + vw - progW - 16;
+            const py = vy + 18;
+            const pct = Math.max(0, Math.min(1, p.x / diff.trackLength));
+
+            ctx.fillStyle = 'rgba(17, 24, 39, 0.8)';
+            ctx.fillRect(px, py, progW, 12);
+            ctx.fillStyle = p.color.hex;
+            ctx.fillRect(px, py, progW * pct, 12);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(px, py, progW, 12);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '700 11px Inter';
+            ctx.textAlign = 'right';
+            ctx.fillText(`TRACK: ${Math.floor(pct * 100)}%`, px + progW, py + 26);
+
+            // Status Banner (Center Screen Alerts)
+            if (p.statusTimer > 0 && p.statusText) {
+                ctx.font = '900 18px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#fde047';
+                ctx.fillText(p.statusText, vx + vw / 2, vy + vh * 0.32);
+            }
+        }
+
+        /**************************************************************
+         * 8. MAIN GAME LOOP & LIFECYCLE
+         **************************************************************/
+        let lastFrameTime = performance.now();
+
+        function startGame() {
+            initAudio();
+            resizeCanvas();
+
+            const diff = DIFFICULTIES[currentDiffIndex];
+            const badge = document.getElementById('diffBadge');
+            badge.textContent = diff.name;
+            badge.className = `text-xs font-extrabold px-2.5 py-0.5 rounded uppercase ${diff.badgeClass}`;
+
+            generateConstructionTrack(diff);
+
+            const p1Name = document.getElementById('p1Name').value.trim() || 'Blaze';
+            const p2Name = document.getElementById('p2Name').value.trim() || 'Nitro';
+
+            players = [createPlayer(1, p1Name, BIKE_COLORS[p1ColorIndex])];
+            if (numPlayers === 2) {
+                players.push(createPlayer(2, p2Name, BIKE_COLORS[p2ColorIndex]));
+            }
+
+            // Configure touch rows for 1P or 2P
+            const p1TouchRow = document.getElementById('p1TouchRow');
+            const p2TouchRow = document.getElementById('p2TouchRow');
+            if (numPlayers === 2) {
+                p1TouchRow.classList.remove('mt-auto');
+                p1TouchRow.classList.add('mt-12');
+                p2TouchRow.classList.remove('hidden');
+                p2TouchRow.classList.add('flex');
+            } else {
+                p1TouchRow.classList.add('mt-auto');
+                p1TouchRow.classList.remove('mt-12');
+                p2TouchRow.classList.add('hidden');
+                p2TouchRow.classList.remove('flex');
+            }
+
+            document.getElementById('setupScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.remove('flex');
+
+            gameActive = true;
+            lastFrameTime = performance.now();
+        }
+
+        function restartRace() {
+            startGame();
+        }
+
+        function checkRaceEnd() {
+            const allDone = players.every(p => p.finished);
+            if (!allDone) return;
+
+            setTimeout(() => {
+                gameActive = false;
+                const resultsModal = document.getElementById('resultsScreen');
+                const content = document.getElementById('resultsContent');
+                const banner = document.getElementById('winnerBanner');
+
+                let html = '';
+                if (players.length === 1) {
+                    const p = players[0];
+                    banner.textContent = `🏁 ${p.name.toUpperCase()} FINISHED!`;
+                    html = `
+                        <div class="bg-gray-900 p-4 rounded-xl border-2 border-amber-500 text-left space-y-1">
+                            <div class="text-2xl font-black text-amber-400">TOTAL SCORE: ${Math.floor(p.score)}</div>
+                            <div class="text-sm text-gray-300">🔥 Wheelie Bonus Points: <strong>${Math.floor(p.wheelieBonus)}</strong></div>
+                            <div class="text-sm text-gray-300">🔄 360° Flips Landed: <strong>${p.flipsCount}</strong></div>
+                            <div class="text-sm text-gray-300">⏱️ Longest Wheelie: <strong>${p.bestWheelieSec.toFixed(1)} seconds</strong></div>
+                            <div class="text-sm text-gray-300">⭐ Stars Collected: <strong>${p.starsCollected}</strong></div>
+                        </div>
+                    `;
+                } else {
+                    const sorted = [...players].sort((a, b) => b.score - a.score);
+                    banner.textContent = `🏆 ${sorted[0].name.toUpperCase()} WINS!`;
+                    sorted.forEach((p, idx) => {
+                        const medal = idx === 0 ? '🥇 1ST PLACE' : '🥈 2ND PLACE';
+                        html += `
+                            <div class="bg-gray-900 p-4 rounded-xl border-2 ${idx === 0 ? 'border-amber-400' : 'border-gray-700'} text-left">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-black text-lg text-white">${medal} - ${p.name}</span>
+                                    <span class="font-black text-xl text-amber-400">${Math.floor(p.score)} PTS</span>
+                                </div>
+                                <div class="text-xs text-gray-400 mt-1">
+                                    Best Wheelie: ${p.bestWheelieSec.toFixed(1)}s  |  Flips: 🔄 ${p.flipsCount}  |  Stars: ⭐ ${p.starsCollected}
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                content.innerHTML = html;
+                resultsModal.classList.remove('hidden');
+                resultsModal.classList.add('flex');
+            }, 600);
+        }
+
+        function gameLoop(now) {
+            const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+            lastFrameTime = now;
+            const timeSec = now / 1000;
+
+            const diff = DIFFICULTIES[currentDiffIndex];
+
+            if (gameActive && players.length > 0) {
+                // Update Player 1
+                updatePlayerPhysics(players[0], dt, {
+                    gas: keys.p1Gas,
+                    lean: keys.p1Lean,
+                    down: keys.p1Down,
+                    jump: keys.p1Jump,
+                    flip: keys.p1Flip
+                }, diff);
+
+                // Update Player 2 if active
+                if (players.length === 2) {
+                    updatePlayerPhysics(players[1], dt, {
+                        gas: keys.p2Gas,
+                        lean: keys.p2Lean,
+                        down: keys.p2Down,
+                        jump: keys.p2Jump,
+                        flip: keys.p2Flip
+                    }, diff);
+                }
+            }
+
+            // Render Viewports
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (players.length === 1) {
+                drawViewport(players[0], 0, 0, canvas.width, canvas.height, diff, timeSec);
+            } else if (players.length === 2) {
+                const halfH = canvas.height / 2;
+                drawViewport(players[0], 0, 0, canvas.width, halfH, diff, timeSec);
+                drawViewport(players[1], 0, halfH, canvas.width, halfH, diff, timeSec);
+
+                // Split-screen Hazard Divider Line
+                ctx.fillStyle = '#f59e0b';
+                ctx.fillRect(0, halfH - 3, canvas.width, 6);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.onload = function () {
+            renderColorPickers();
+            resizeCanvas();
+            // Create preview state behind modal
+            generateConstructionTrack(DIFFICULTIES[0]);
+            players = [createPlayer(1, 'Blaze', BIKE_COLORS[0])];
+            requestAnimationFrame(gameLoop);
+        };
+    </script>
+</body>
+</html>
